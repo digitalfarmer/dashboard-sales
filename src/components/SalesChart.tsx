@@ -1,8 +1,9 @@
 "use client";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+import { formatRupiah } from '@/lib/utils';
 
 export default function SalesChart({ data }: { data: any[] }) {
-  
+
   // Fungsi Helper untuk format Rupiah
   const formatRupiah = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -25,32 +26,45 @@ export default function SalesChart({ data }: { data: any[] }) {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Trend Penjualan Netto</h2>
         <ResponsiveContainer width="100%" height="90%">
-          <LineChart data={data}>
+          {/* <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis 
-              dataKey="fkmonth" 
-              tickFormatter={(value) => `Bulan ${value}`} 
-            />
-            <YAxis 
-              tickFormatter={formatYAxis} 
-              width={80}
-            />
-            <Tooltip 
-              formatter={(value: number) => [formatRupiah(value), "Total Netto"]}
-              labelFormatter={(label) => `Bulan: ${label}`}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="total_netto" 
-              stroke="#2563eb" 
-              strokeWidth={3} 
-              dot={{ r: 6 }} 
-              activeDot={{ r: 8 }}
-            />
-          </LineChart>
+            <XAxis dataKey="fkmonth" />
+            <YAxis tickFormatter={formatYAxis} />
+            <Tooltip formatter={(val: number) => formatRupiah(val)} />
+            <Legend />
+            <Line type="monotone" dataKey="total_faktur" name="Faktur (Gross)" stroke="#10b981" strokeWidth={2} />
+            <Line type="monotone" dataKey="total_netto_bersih" name="Netto Bersih" stroke="#2563eb" strokeWidth={3} />
+          </LineChart> */}
+          <LineChart data={data}>
+  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+  <XAxis dataKey="fkmonth" tickFormatter={(v) => `Bulan ${v}`} />
+  <YAxis tickFormatter={formatYAxis} width={80} />
+  <Tooltip formatter={(val: number) => formatRupiah(val)} />
+  <Legend verticalAlign="top" height={40} />
+  
+              {/* Garis Gross: Menggunakan total_gross dari query baru kamu */}
+              <Line 
+                type="monotone" 
+                dataKey="total_gross" 
+                name="Gross Sales" 
+                stroke="#10b981" 
+                strokeWidth={2} 
+                dot={{ r: 4 }}
+              />
+
+              {/* Garis Netto: Hasil akhir setelah dipotong retur/potongan */}
+              <Line 
+                type="monotone" 
+                dataKey="total_netto_bersih" 
+                name="Netto Bersih" 
+                stroke="#2563eb" 
+                strokeWidth={3} 
+                dot={{ r: 6 }}
+              />
+            </LineChart>
         </ResponsiveContainer>
       </div>
-      
+
       {/* Chart Qty tetap gunakan angka biasa */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Volume Penjualan (Qty)</h2>
