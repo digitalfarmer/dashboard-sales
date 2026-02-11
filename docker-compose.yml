@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  dashboard-app:
+    build: .
+    container_name: bsp-dashboard
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - CLICKHOUSE_HOST=${CLICKHOUSE_HOST}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_DATABASE=${CLICKHOUSE_DATABASE}
+    networks:
+      - bsp-network
+
+networks:
+  bsp-network:
+    driver: bridge
