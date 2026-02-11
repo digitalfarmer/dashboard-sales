@@ -39,7 +39,7 @@ export default function SalesChart({ data }: { data: any[] }) {
   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
   <XAxis dataKey="fkmonth" tickFormatter={(v) => `Bulan ${v}`} />
   <YAxis tickFormatter={formatYAxis} width={80} />
-  <Tooltip formatter={(val: number) => formatRupiah(val)} />
+  <Tooltip formatter={(val: number | any) => formatRupiah(val || 0)} />
   <Legend verticalAlign="top" height={40} />
   
               {/* Garis Gross: Menggunakan total_gross dari query baru kamu */}
