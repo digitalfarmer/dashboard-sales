@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cabang = searchParams.get('cabang');
   const divisi = searchParams.get('divisi');
-  const tahun = searchParams.get('tahun') || currentYear;
+  const tahun = searchParams.get('tahun') || '2025';
 
   let whereClause = `WHERE fkyear = ${tahun}`;
   if (cabang && cabang !== 'all') whereClause += ` AND kode_cabang = '${cabang}'`;

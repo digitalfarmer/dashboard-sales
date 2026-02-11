@@ -5,12 +5,18 @@ import { Banknote, Filter, Package } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 
 
+//
+
 export default function Dashboard() {
+
+  //get current year
+  const currentYear = new Date().getFullYear().toString();
+
   const [data, setData] = useState([]);
   const [filters, setFilters] = useState({ cabang: [], divisi: [], tahun: [] });
   const [selectedCabang, setSelectedCabang] = useState('all');
   const [selectedDivisi, setSelectedDivisi] = useState('all');
-  const [selectedTahun, setSelectedTahun] = useState('2025');
+  const [selectedTahun, setSelectedTahun] = useState(currentYear);
   const [topProducts, setTopProducts] = useState([]);
 
   // Load Filter Options
