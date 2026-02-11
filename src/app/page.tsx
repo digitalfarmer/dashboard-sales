@@ -1,12 +1,20 @@
 "use client"; // Ubah jadi client component agar bisa handle state dropdown
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import SalesChart from '@/components/SalesChart';
 import { Banknote, Filter, Package } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 
 
-//
-
+// Dynamic import untuk DistributionMap agar tidak di-SSR
+const DistributionMap = dynamic(() => import('@/components/DistributionMap'), { 
+  ssr: false,
+  loading: () => (
+    <div className="h-[500px] w-full bg-gray-100 animate-pulse flex items-center justify-center rounded-xl">
+       Prepare Peta Distribusi...
+    </div>
+  )
+});
 export default function Dashboard() {
 
   //get current year
@@ -18,6 +26,7 @@ export default function Dashboard() {
   const [selectedDivisi, setSelectedDivisi] = useState('all');
   const [selectedTahun, setSelectedTahun] = useState(currentYear);
   const [topProducts, setTopProducts] = useState([]);
+  const [mapData, setMapData] = useState([]);
 
   // Load Filter Options
   useEffect(() => {
@@ -35,6 +44,13 @@ export default function Dashboard() {
     fetch(`/api/top-products?cabang=${selectedCabang}&divisi=${selectedDivisi}&tahun=${selectedTahun}`)
       .then(res => res.json())
       .then(setTopProducts);
+  }, [selectedCabang, selectedDivisi, selectedTahun]);
+
+  // useEffect untuk fetch Map Data
+  useEffect(() => {
+    fetch(`/api/map-data?cabang=${selectedCabang}&divisi=${selectedDivisi}&tahun=${selectedTahun}`)
+      .then(res => res.json())
+      .then(setMapData);
   }, [selectedCabang, selectedDivisi, selectedTahun]);
 
 
@@ -168,6 +184,12 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* --- PANGGIL KOMPONENNYA DI SINI --- */}
+        <div className="mt-8 bg-white p-4 rounded-xl shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Peta Sebaran Nasional</h2>
+          <DistributionMap data={mapData} />
         </div>
 
       </div>
