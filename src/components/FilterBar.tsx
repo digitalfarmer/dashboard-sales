@@ -1,5 +1,8 @@
 'use client';
-//filter buat semua component di dashboard utama
+
+import React from 'react';
+import { Calendar, MapPin, Layers, Info } from 'lucide-react';
+
 interface FilterBarProps {
   selectedTahun: string;
   setSelectedTahun: (v: string) => void;
@@ -10,36 +13,45 @@ interface FilterBarProps {
   listTahun: string[];
   listCabang: any[];
   listDivisi: any[];
+  isLoading?: boolean;
 }
 
 export default function FilterBar({
   selectedTahun, setSelectedTahun,
   selectedCabang, setSelectedCabang,
   selectedDivisi, setSelectedDivisi,
-  listTahun, listCabang, listDivisi
+  listTahun, listCabang, listDivisi,
+  isLoading = false // Default false
 }: FilterBarProps) {
 
   return (
-    <div className="flex flex-wrap gap-4 bg-white p-4 rounded-xl shadow-sm mb-6 border border-gray-100 items-end">
+    <div className="bg-white/80 backdrop-blur-md sticky top-0 z-30 mb-8 p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap items-end gap-6 transition-all">
+      
       {/* Filter Tahun */}
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tahun</label>
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] ml-1">
+          <Calendar size={14} className="text-blue-500" />
+          Tahun
+        </label>
         <select 
           value={selectedTahun}
           onChange={(e) => setSelectedTahun(e.target.value)}
-          className="border rounded-lg px-3 py-2 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-500  transition-all"
+          className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer min-w-[100px]"
         >
           {listTahun?.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
       </div>
 
       {/* Filter Cabang */}
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cabang</label>
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] ml-1">
+          <MapPin size={14} className="text-emerald-500" />
+          Cabang
+        </label>
         <select 
           value={selectedCabang}
           onChange={(e) => setSelectedCabang(e.target.value)}
-          className="border rounded-lg px-3 py-2 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[150px]"
+          className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all cursor-pointer min-w-[180px]"
         >
           <option value="all">Semua Cabang</option>
           {listCabang?.map((c) => (
@@ -49,12 +61,15 @@ export default function FilterBar({
       </div>
 
       {/* Filter Divisi */}
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Divisi Produk</label>
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] ml-1">
+          <Layers size={14} className="text-orange-500" />
+          Divisi Produk
+        </label>
         <select 
           value={selectedDivisi}
           onChange={(e) => setSelectedDivisi(e.target.value)}
-          className="border rounded-lg px-3 py-2 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[150px]"
+          className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all cursor-pointer min-w-[180px]"
         >
           <option value="all">Semua Divisi</option>
           {listDivisi?.map((d) => (
@@ -63,10 +78,17 @@ export default function FilterBar({
         </select>
       </div>
 
-      {/* Tombol Reset atau Info Tambahan bisa di sini */}
-     <div className="mt-2 ml-1 text-[10px] text-gray-400 italic">
-        * Data ClickHouse
+      {/* Info Engine */}
+      <div className="flex-grow flex justify-end items-center pb-2">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-slate-500">
+          <Info size={14} />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Engine: ClickHouse</span>
+        </div>
       </div>
+
+
+
+
     </div>
   );
 }

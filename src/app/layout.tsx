@@ -12,10 +12,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "BSP Datawarehouse",
-  description: "created by Ade Setiawan",
-};
+export const metadata = {
+  title: 'BSP Dashboard',
+  description: 'Real-time Monitoring System by Ades',
+  
+}
 
 export default function RootLayout({
   children,
