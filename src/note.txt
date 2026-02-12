@@ -2,58 +2,16 @@ task
 1. grafik gross ALL cabang
 2. grafik top down gross cabang
 3. grafik map distribasusi penjualan
+4. Mau lanjut poles bagian SalesChart biar bisa bandingin performa tahun ini vs tahun lalu (YoY)?
+5. Atau mau saya bantu buatin fitur Export ke Excel buat kebutuhan laporan admin?
 
 docker run -d -p 3001:3001 --name dashboard-sales-ch bsp-dashboard
 
+docker build -t bsp-dashboard:latest .
+docker-compose up -d
+
 openssl req -x509 -newkey rsa:2048 -keyout dashboard.key -out dashboard.crt -days 365 -nodes -subj "/C=ID/ST=Jakarta/L=Jakarta/O=BSP/OU=IT/CN=localhost"
 
-
-
-"ACEH": [5.5483, 95.3238],
-  "BANDUNG-PW": [-6.9080, 107.6111], // PW (Kantor Pusat/Tamansari)
-  "BEKASI": [-6.2383, 106.9756],
-  "BOGOR": [-6.5971, 106.8060],
-  "BANJARMASIN": [-3.3167, 114.5901],
-  "BENGKULU": [-3.7929, 102.2608],
-  "BANDUNG-LG": [-6.9064, 107.5385], // Leuwigajah
-  "BALIKPAPAN": [-1.2654, 116.8312],
-  "BATAM": [1.1301, 104.0529],
-  "CIREBON": [-6.7063, 108.5570],
-  "DEPOK": [-6.4025, 106.7942],
-  "DENPASAR": [-8.6705, 115.2126],
-  "JAMBI": [-1.6101, 103.6131],
-  "JAKARTA I  (RAWABUAYA)": [-6.1554, 106.7212],
-  "JAKARTA II (PULOGADUNG)": [-6.1895, 106.9113],
-  "JAKARTA III (TANGERANG)": [-6.1783, 106.6319],
-  "JEMBER": [-8.1724, 113.7003],
-  "KEDIRI": [-7.8480, 112.0178],
-  "KARAWANG": [-6.3227, 107.3376],
-  "KUPANG": [-10.1772, 123.6070],
-  "LAMPUNG": [-5.4292, 105.2611],
-  "MEDAN": [3.5952, 98.6722],
-  "MANADO": [1.4748, 124.8421],
-  "MADIUN": [-7.6298, 111.5239],
-  "MAKASSAR": [-5.1476, 119.4327],
-  "MALANG": [-7.9666, 112.6326],
-  "MATARAM": [-8.5799, 116.0999],
-  "PEKANBARU": [0.5071, 101.4478],
-  "PADANG": [-0.9471, 100.4172],
-  "PALEMBANG": [-2.9761, 104.7754],
-  "PALU": [-0.8917, 119.8707],
-  "PEMATANG SIANTAR": [2.9717, 99.0688],
-  "PATI": [-6.7487, 111.0379],
-  "PONTIANAK": [0.0000, 109.3248],
-  "PURWOKERTO": [-7.4244, 109.2302],
-  "SURABAYA II (RUNGKUT)": [-7.3323, 112.7661],
-  "SURABAYA I (KENJERAN)": [-7.2403, 112.7946],
-  "SUKABUMI": [-6.9277, 106.9300],
-  "SOLO": [-7.5755, 110.8243],
-  "SAMARINDA": [-0.4949, 117.1492],
-  "SEMARANG": [-6.9932, 110.4203],
-  "SERANG": [-6.1104, 106.1625],
-  "TEGAL": [-6.8677, 109.1371],
-  "TASIKMALAYA": [-7.3274, 108.2207],
-  "YOGYAKARTA": [-7.7956, 110.3695],
 
 
   Wah, kalau pertanyaannya "bagian apa lagi", ini beberapa ide fitur "Killer" yang biasanya diminta oleh jajaran direksi atau manajer operasional untuk melengkapi dashboard data seperti milik BSP ini:
