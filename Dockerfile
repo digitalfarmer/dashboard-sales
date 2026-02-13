@@ -12,7 +12,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Pastikan environment variable dikirim saat build jika diperlukan
 ENV NEXT_TELEMETRY_DISABLED 1
-RUN npm install full-icu
+
 RUN npm run build
 
 # Stage 3: Production runner
