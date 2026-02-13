@@ -65,6 +65,7 @@ export function useDashboardData(selectedTahun: string, selectedCabang: string, 
     const totalRetur = data.reduce((acc, curr: any) => acc + Number(curr.total_retur), 0);
     const totalNetto = data.reduce((acc, curr: any) => acc + Number(curr.total_netto_bersih), 0);
     const returnRate = totalGross !== 0 ? (totalRetur / totalGross) * 100 : 0;
+    //const trends = trends;
 
     const calculateTrend = (dataArray: any[], key: string) => {
         if (dataArray.length < 2) return 0;

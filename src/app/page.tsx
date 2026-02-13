@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [selectedDivisi, setSelectedDivisi] = useState('all');
 
   // Logic fetching & kalkulasi summary sudah dipindah ke sini
-  const { data, topProducts, mapData, isLoading, error, summary, lastUpdated } =
+  const { data, topProducts, mapData, isLoading, error, summary, trends, lastUpdated } =
     useDashboardData(selectedTahun, selectedCabang, selectedDivisi);
 
   // State untuk dropdown filter (Master Data)
@@ -99,7 +99,7 @@ export default function Dashboard() {
         ) : (
           <>
             {/* Gunakan {...summary} untuk mengoper hasil kalkulasi dari hook */}
-            <SummaryCards {...summary} />
+            <SummaryCards {...summary} trends={trends} />
 
             {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6"> */}
             <SalesChart data={data} />
