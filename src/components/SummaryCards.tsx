@@ -46,7 +46,11 @@ const Card = ({ title, value, trend, gradient, accentColor, textColor, icon, isN
 
       {/* 2. WATERMARK DI BACKGROUND: Gerak membesar & berputar pelan */}
       <div className="absolute -right-4 -top-4 opacity-[0.05] text-slate-900 transition-all duration-700 ease-in-out group-hover:opacity-10 group-hover:scale-150 group-hover:-rotate-12">
-        {React.cloneElement(icon as React.ReactElement, { size: 100 })}
+        {React.isValidElement(icon) && 
+          React.cloneElement(icon as React.ReactElement<any>, { 
+            size: 100 
+          })
+        }
       </div>
 
       <div className="relative z-10">
