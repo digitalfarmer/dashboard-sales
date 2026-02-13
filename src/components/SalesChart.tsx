@@ -21,18 +21,17 @@ export default function SalesChart({ data }: { data: any[] }) {
   return numValue.toString();
   };
 
-  const formatRupiahTooltip = (value: number) => {
-    try {
-      return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-      }).format(value);
-    } catch (error) {
-      // Fallback jika locale tidak tersedia
-      return `Rp ${value.toLocaleString('en-US')}`;
-    }
-  };
+  const formatRupiahTooltip = (value: number | string | undefined): string => {
+  if (value === undefined) return "Rp 0";
+  
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(numValue);
+};
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-auto min-h-[450px] mb-8">
@@ -75,7 +74,7 @@ export default function SalesChart({ data }: { data: any[] }) {
               />
               <Tooltip 
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                formatter={(val: number) => [formatRupiahTooltip(val), ""]}
+                formatter={(value: number) => formatRupiahTooltip(value)}
               />
               <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
               
