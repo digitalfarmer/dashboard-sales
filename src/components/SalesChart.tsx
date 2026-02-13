@@ -22,11 +22,16 @@ export default function SalesChart({ data }: { data: any[] }) {
   };
 
   const formatRupiahTooltip = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(value);
+    try {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      }).format(value);
+    } catch (error) {
+      // Fallback jika locale tidak tersedia
+      return `Rp ${value.toLocaleString('en-US')}`;
+    }
   };
 
   return (
