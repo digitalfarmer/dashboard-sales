@@ -9,29 +9,31 @@ import {
 
 export default function SalesChart({ data }: { data: any[] }) {
 
-  // Fungsi Singkatan (Misal: 1M untuk 1 Miliar) - Dibuat lebih rapi
-  const formatYAxis = (value: number|string) => {
+  // 1. Formatter Sumbu Y & Label (Ringkas: jt, M, rb)
+  const formatYAxis = (value: any): string => {
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
 
-   if (isNaN(numValue)) return value.toString();
+    if (numValue === undefined || numValue === null || isNaN(numValue)) return "0";
 
-  if (numValue >= 1000000000) return `${(numValue / 1000000000).toFixed(1)}M`;
-  if (numValue >= 1000000) return `${(numValue / 1000000).toFixed(1)}jt`;
-  if (numValue >= 1000) return `${(numValue / 1000).toFixed(0)}rb`;
-  return numValue.toString();
+    if (numValue >= 1000000000) return `${(numValue / 1000000000).toFixed(1)}M`;
+    if (numValue >= 1000000) return `${(numValue / 1000000).toFixed(1)}jt`;
+    if (numValue >= 1000) return `${(numValue / 1000).toFixed(0)}rb`;
+    return numValue.toString();
   };
 
-  const formatRupiahTooltip = (value: number | string | undefined): string => {
-  if (value === undefined) return "Rp 0";
-  
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(numValue);
-};
+  // 2. Formatter Rupiah Lengkap (Tooltip)
+  const formatRupiahTooltip = (value: any): string => {
+    if (value === undefined || value === null) return "Rp 0";
+    
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return "Rp 0";
+    
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(numValue);
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-auto min-h-[450px] mb-8">
@@ -70,11 +72,11 @@ export default function SalesChart({ data }: { data: any[] }) {
                 axisLine={false}
                 tickLine={false}
                 tick={{fill: '#94a3b8', fontSize: 11}}
-                  width={75}
+                width={75}
               />
               <Tooltip 
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                formatter={(value: number) => formatRupiahTooltip(value)}
+                formatter={(value: any) => [formatRupiahTooltip(value), ""]}
               />
               <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
               
@@ -125,25 +127,26 @@ export default function SalesChart({ data }: { data: any[] }) {
                 tickLine={false}
                 tick={{fill: '#94a3b8', fontSize: 11}}
                 tickFormatter={formatYAxis}
+                width={60}
               />
               <Tooltip 
                 cursor={{fill: '#f8fafc'}}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                formatter={(value: any) => [value?.toLocaleString('id-ID'), "Qty"]}
               />
               <Bar 
                 dataKey="total_qty" 
                 name="Total Qty" 
                 fill="#6366f1" 
                 radius={[6, 6, 0, 0]} 
-                
                 barSize={40}
               >
-                {/* Menampilkan angka di atas bar jika datanya tidak terlalu padat */}
                 <LabelList 
-                dataKey="total_qty" 
-                position="top"
-                formatter={(val: number) => formatYAxis(val)} // <--- Gunakan formatter supaya ringkas (misal 1.2jt)
-                style={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} />
+                  dataKey="total_qty" 
+                  position="top"
+                  formatter={(val: any) => formatYAxis(val)}
+                  style={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} 
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
