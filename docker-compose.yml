@@ -5,6 +5,7 @@ services:
     build: .
     restart: always
     environment:
+      - PORT=3001
       - HOSTNAME=0.0.0.0 
       - CLICKHOUSE_HOST=${CLICKHOUSE_HOST}
       - CLICKHOUSE_USER=${CLICKHOUSE_USER}

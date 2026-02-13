@@ -16,7 +16,11 @@ export const metadata = {
   title: 'BSP Dashboard',
   description: 'Real-time Monitoring System by Ades',
   
+    icon: '/icon.png', 
+  
 }
+
+
 
 export default function RootLayout({
   children,
