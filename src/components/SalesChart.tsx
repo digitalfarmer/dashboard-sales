@@ -10,11 +10,15 @@ import {
 export default function SalesChart({ data }: { data: any[] }) {
 
   // Fungsi Singkatan (Misal: 1M untuk 1 Miliar) - Dibuat lebih rapi
-  const formatYAxis = (value: number) => {
-    if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}M`;
-    if (value >= 1000000) return `${(value / 1000000).toFixed(0)}jt`;
-    if (value >= 1000) return `${(value / 1000).toFixed(0)}rb`;
-    return value;
+  const formatYAxis = (value: number|string) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
+   if (isNaN(numValue)) return value.toString();
+
+  if (numValue >= 1000000000) return `${(numValue / 1000000000).toFixed(1)}M`;
+  if (numValue >= 1000000) return `${(numValue / 1000000).toFixed(1)}jt`;
+  if (numValue >= 1000) return `${(numValue / 1000).toFixed(0)}rb`;
+  return numValue.toString();
   };
 
   const formatRupiahTooltip = (value: number) => {
