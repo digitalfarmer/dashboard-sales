@@ -38,3 +38,8 @@ export async function login(formData: FormData) {
 
   redirect('/dashboard');
 }
+export async function logout() {
+  const cookieStore = await cookies();
+  cookieStore.delete('session'); // Hapus cookie session
+  redirect('/login'); // Tendang balik ke halaman login
+}
