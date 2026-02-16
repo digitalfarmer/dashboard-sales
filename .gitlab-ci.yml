@@ -4,22 +4,21 @@ stages:
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
-  # Pastikan ini sesuai dengan path di Container Registry GitLab Anda
-  IMAGE_NAME: "root/dashboardbsp" 
+  # Pastikan nama image sesuai URL proyek Anda
+  IMAGE_NAME: "root/dashboardbsp"
   TAG: $CI_COMMIT_SHORT_SHA
 
 build_and_push:
   stage: build
   script:
-    # Login ulang di setiap job untuk memastikan sesi segar
-    - echo "$REGISTRY_PASSWORD" | docker login $REGISTRY_URL -u "$REGISTRY_USER" --password-stdin
+    # Login langsung menggunakan token personal yang Anda berikan
+    - echo "glpat-djZzvI6fFD1HqgizJGPkiW86MQp1OjQH.01.0w0wzovf2" | docker login 192.168.21.10:5005 -u "itn" --password-stdin
     
     - echo "Building image..."
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
     
     - echo "Pushing image..."
-    # Tambahkan verifikasi login sebelum push jika ragu
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
 
