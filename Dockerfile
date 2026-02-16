@@ -13,9 +13,11 @@ COPY . .
 # Pastikan environment variable dikirim saat build jika diperlukan
 ENV NEXT_TELEMETRY_DISABLED 1
 # ... (set-up base image node)
+COPY package*.json ./
 COPY prisma ./prisma/
+RUN npm install
 RUN npx prisma generate
-
+COPY . .
 RUN npm run build
 
 # Stage 3: Production runner
