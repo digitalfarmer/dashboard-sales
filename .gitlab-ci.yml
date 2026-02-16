@@ -27,7 +27,6 @@ deploy_to_k3s:
   script:
     - kubectl config use-context default
     - kubectl apply -f service.yaml
-    # Gunakan 'dashboardbsp' sebagai nama container sesuai hasil pengecekan tadi
     - kubectl set image deployment/dashboard-bsp dashboardbsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
   only:
     - main
