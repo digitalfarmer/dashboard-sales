@@ -10,15 +10,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Pastikan environment variable dikirim saat build jika diperlukan
 ENV NEXT_TELEMETRY_DISABLED 1
-# ... (set-up base image node)
-COPY package*.json ./
-COPY prisma ./prisma/
-RUN npm install
-COPY prisma.config.ts ./
+
+# Prisma setup
 RUN npx prisma generate
-COPY . .
 RUN npm run build
 
 # Stage 3: Production runner
@@ -31,10 +26,15 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy hasil build
+# COPY PENTING: Standalone mode butuh folder prisma dan config secara manual
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Tambahkan ini supaya file Prisma & Seed ada di container runner
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 
 USER nextjs
 
