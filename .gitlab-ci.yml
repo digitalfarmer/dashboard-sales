@@ -11,16 +11,18 @@ variables:
 build_and_push:
   stage: build
   script:
-    # Login langsung menggunakan token personal yang Anda berikan
+    # Login wajib menggunakan kredensial yang punya akses write
     - echo "glpat-djZzvI6fFD1HqgizJGPkiW86MQp1OjQH.01.0w0wzovf2" | docker login 192.168.21.10:5005 -u "itn" --password-stdin
     
     - echo "Building image..."
+    # Build akan cepat karena 'node:20-alpine' sudah ada di cache
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
     
     - echo "Pushing image..."
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
+
 
 deploy_to_k3s:
   stage: deploy
