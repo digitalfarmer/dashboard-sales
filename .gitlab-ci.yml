@@ -28,12 +28,8 @@ deploy_to_k3s:
     - kubectl apply -f service.yaml
     - |
       kubectl set env deployment/dashboard-bsp \
-        CLICKHOUSE_HOST="http://192.168.21.31" \
-        CLICKHOUSE_PORT="8123" \
+        CLICKHOUSE_HOST="http://192.168.21.31:8123" \
         CLICKHOUSE_USER="admindb" \
         CLICKHOUSE_PASS="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi"
     - kubectl set image deployment/dashboard-bsp dashboardbsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
-  only:
-    - main
-  when: manual
