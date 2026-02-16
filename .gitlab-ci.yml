@@ -4,28 +4,31 @@ stages:
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
-  IMAGE_NAME: "root/dashboardbsp" # Sesuaikan dengan nama project di log Anda
+  # Sesuaikan persis dengan path URL GitLab Anda
+  IMAGE_NAME: "root/dashboardbsp" 
   TAG: $CI_COMMIT_SHORT_SHA
 
 build_and_push:
   stage: build
   script:
-    # Login menggunakan Deploy Token yang sudah dimasukkan ke Variables
+    # Login menggunakan Deploy Token yang sudah Anda masukkan di Variables
     - echo "Logging in to $REGISTRY_URL..."
     - echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_URL" -u "$REGISTRY_USER" --password-stdin
     
+    # Proses Build Image
     - echo "Building image..."
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
     
-    - echo "Pushing image..."
+    # Proses Push ke Registry
+    - echo "Pushing image to $REGISTRY_URL..."
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
 
 deploy_to_k3s:
   stage: deploy
   script:
-    # KUBECONFIG sudah ada di Variables sebagai tipe File
+    # Memastikan file KUBECONFIG terbaca dari variabel GitLab
     - kubectl config use-context default
     - kubectl set image deployment/dashboard-bsp dashboard-bsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
   only:
