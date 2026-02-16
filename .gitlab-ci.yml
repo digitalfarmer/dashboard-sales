@@ -10,7 +10,7 @@ variables:
 build_project:
   stage: build
   tags:
-    - shell # Gunakan shell runner Anda
+    - k3s-prod-21-10 # DISESUAIKAN: Sesuai dengan tag di Runner #2
   script:
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
@@ -20,7 +20,7 @@ build_project:
 deploy_to_k3s:
   stage: deploy
   tags:
-    - shell
+    - k3s-prod-21-10 # DISESUAIKAN: Sesuai dengan tag di Runner #2
   script:
     - .\kubectl.exe apply -f k3s-bsp.yaml
     - .\kubectl.exe rollout restart deployment/dashboard-bsp
