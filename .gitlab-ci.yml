@@ -13,9 +13,11 @@ build_and_push:
   services:
     - docker:dind
   script:
-    # Login menggunakan variabel yang ada di gambar (REGISTRY_USER & REGISTRY_PASSWORD)
-    # 1. Pastikan Login menggunakan token yang dibuat di project k3s-stok-prod
-    - echo "glpat-djZzvI6fFD1HqgizJGPkiW86MQp1OjQH.01.0w0wzovf2" | docker login 192.168.21.10:5005 -u "itn" --password-stdin
+  - echo "Logging in to $REGISTRY_URL..."
+  # Menggunakan printf lebih aman untuk menangani token panjang
+  - printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY_URL" -u "$REGISTRY_USER" --password-stdin
+  - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
+  - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
 
     # Proses Build
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
