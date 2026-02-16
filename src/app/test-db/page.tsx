@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'; // Tambahkan ini
 import { prisma } from "@/lib/prisma";
 
 export default async function TestDBPage() {
