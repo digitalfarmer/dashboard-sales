@@ -1,6 +1,6 @@
 stages:
   - build
-  - push
+  - deploy
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
@@ -9,17 +9,28 @@ variables:
 
 build_and_push:
   stage: build
+  image: docker:latest
+  services:
+    - docker:dind
   script:
-    # 1. Pastikan Login menggunakan kredensial yang tepat
-    # Jika registry Anda tidak pakai password, baris ini bisa dilewati
-    - echo "Logging in to $REGISTRY_URL..."
-    - docker login $REGISTRY_URL -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
-    
-    # 2. Build image
+    # Login menggunakan variabel yang ada di gambar (REGISTRY_USER & REGISTRY_PASSWORD)
+    - echo "Logging in to $REGISTRY_URL as $REGISTRY_USER..."
+    - echo "$REGISTRY_PASSWORD" | docker login $REGISTRY_URL -u "$REGISTRY_USER" --password-stdin
+
+    # Proses Build
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
     
-    # 3. Push ke Registry
-    - echo "Pushing image to $REGISTRY_URL..."
+    # Proses Push
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
+
+deploy_to_k3s:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    # KUBECONFIG sudah ada di gambar sebagai tipe 'File', ini sudah benar.
+    - kubectl config use-context default
+    - kubectl set image deployment/dashboard-bsp dashboard-bsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
+  only:
+    - main
