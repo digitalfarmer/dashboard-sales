@@ -1,19 +1,18 @@
 'use client';
-import { deleteCookie } from 'cookies-next'; // atau pakai Server Action untuk hapus cookie
-import { useRouter } from 'next/navigation';
+
+import { logout } from '@/app/login/action'; // Impor action logout kamu
+import { LogOut } from 'lucide-react';
 
 export default function LogoutButton() {
-  const router = useRouter();
-  
-  const handleLogout = () => {
-    // Hapus cookie (ini cara simpel, baiknya pakai Server Action)
-    document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.push('/login');
-  };
-
   return (
-    <button onClick={handleLogout} className="text-red-500 hover:underline">
-      Keluar Sistem
+    <button 
+      onClick={async () => {
+        await logout(); // Panggil fungsi logout yang menghapus cookie di server
+      }}
+      className="w-full flex items-center gap-2 p-2 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl font-semibold transition-colors"
+    >
+      <LogOut className="size-4" /> 
+      <span>Keluar</span>
     </button>
   );
 }

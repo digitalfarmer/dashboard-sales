@@ -1,104 +1,94 @@
-'use client'
-import { useState } from 'react'
-import { logout } from '@/app/login/action'
-import {
-  Popover,
-  PopoverButton,
-  PopoverGroup,
-  PopoverPanel,
-} from '@headlessui/react'
-import {
-  ChevronDownIcon,
-  UserCircle,
-  LogOut,
-  Bell,
-  HelpCircle,
-  User,
-  Settings as SettingsIcon
-} from 'lucide-react'
+'use client';
+import { useState, useEffect } from 'react';
+import { logout } from '@/app/login/action'; 
+import { 
+  Menu, Search, Sun, Moon, Bell, 
+  ChevronDown, LogOut, Command 
+} from 'lucide-react';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 
-const userMenus = [
-  { name: 'My Profile', description: 'Cek data personal kamu', href: '#', icon: User },
-  { name: 'Account Settings', description: 'Ganti password & keamanan', href: '#', icon: SettingsIcon },
-  { name: 'Support', description: 'Butuh bantuan teknis?', href: '#', icon: HelpCircle },
-]
+export default function Navbar({ user, toggleSidebar }: { user: any; toggleSidebar: () => void }) {
+  const [isDark, setIsDark] = useState(false);
 
-export default function Navbar({ user }: { user: any }) {
+  useEffect(() => {
+    if (isDark) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, [isDark]);
+
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-      <nav className="mx-auto flex items-center justify-between px-6 py-3">
+    <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-4">
+      <nav className="flex items-center justify-between py-2">
         
-        {/* SISI KIRI: Welcome Message */}
-        <div className="flex lg:flex-1">
-          <div className="flex flex-col">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Working Area</span>
-            <span className="text-sm font-bold text-slate-900">
-               {user?.kodeCabang === 'ALL' ? 'Pusat (Head Office)' : `Regional Office ${user?.kodeCabang}`}
-            </span>
+        {/* KIRI */}
+        <div className="flex items-center gap-4 lg:flex-1">
+          <button 
+            onClick={toggleSidebar}
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+          >
+            <Menu className="size-5" />
+          </button>
+          <div className="hidden md:flex flex-col">
+            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">BI-System</span>
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Executive Panel</span>
           </div>
         </div>
 
-        {/* SISI TENGAH: Menu Cepat (Opsional) */}
-        <PopoverGroup className="hidden lg:flex lg:gap-x-8">
-           <a href="#" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Help Desk</a>
-           <a href="#" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Documentation</a>
-        </PopoverGroup>
+        {/* TENGAH */}
+        <div className="hidden md:flex flex-1 max-w-md mx-4">
+          <div className="relative w-full group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-indigo-600" />
+            <input 
+              type="text" 
+              placeholder="Cari data..." 
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl py-2 pl-10 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-slate-200"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <kbd className="h-5 flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-1.5 text-[10px] text-slate-400">
+                <Command className="size-2.5" /> K
+              </kbd>
+            </div>
+          </div>
+        </div>
 
-        {/* SISI KANAN: Notification & User Profile */}
-        <div className="flex lg:flex-1 lg:justify-end items-center gap-4">
-          <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors relative">
-            <Bell className="size-5" />
-            <span className="absolute top-2 right-2 size-2 bg-rose-500 rounded-full border-2 border-white"></span>
+        {/* KANAN */}
+        <div className="flex items-center gap-2 lg:flex-1 lg:justify-end">
+          <button 
+            onClick={() => setIsDark(!isDark)}
+            className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+          >
+            {isDark ? <Sun className="size-5 text-amber-500" /> : <Moon className="size-5" />}
           </button>
 
-          <div className="h-6 w-px bg-slate-200 mx-2"></div>
+          <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative">
+            <Bell className="size-5" />
+            <span className="absolute top-2 right-2.5 size-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+          </button>
+
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
 
           <Popover className="relative">
-            <PopoverButton className="flex items-center gap-x-2 text-sm font-semibold text-gray-900 focus:outline-none group">
-              <div className="size-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                <UserCircle className="size-5" />
-              </div>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-bold leading-none">{user?.fullName}</p>
-                <p className="text-[10px] text-slate-500 leading-none mt-1">{user?.role}</p>
-              </div>
-              <ChevronDownIcon className="size-4 text-gray-400" />
-            </PopoverButton>
-
-            <PopoverPanel
-              transition
-              className="absolute right-0 z-10 mt-3 w-screen max-w-xs overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-900/5 transition data-closed:translate-y-1 data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
-            >
-              <div className="p-3">
-                {userMenus.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className="group relative flex items-center gap-x-4 rounded-xl p-3 text-sm hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="flex size-9 flex-none items-center justify-center rounded-lg bg-slate-50 group-hover:bg-white transition-colors">
-                      <item.icon className="size-5 text-slate-600 group-hover:text-indigo-600" />
-                    </div>
-                    <div>
-                      <span className="block font-semibold text-slate-900">{item.name}</span>
-                      <p className="text-xs text-slate-500">{item.description}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-              
-              <div className="bg-slate-50 p-3 border-t border-slate-100">
+             <PopoverButton className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all focus:outline-none group">
+                <div className="size-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                   {user?.fullName?.charAt(0)}
+                </div>
+                <ChevronDown className="size-4 text-slate-400 group-hover:text-slate-600" />
+             </PopoverButton>
+             
+             <PopoverPanel className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-2 z-50">
+                <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
+                  <p className="text-xs font-bold text-slate-900 dark:text-slate-200 truncate">{user?.fullName}</p>
+                  <p className="text-[10px] text-slate-500">{user?.role}</p>
+                </div>
                 <form action={logout}>
-                  <button className="flex w-full items-center justify-center gap-x-2.5 rounded-xl p-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors">
-                    <LogOut className="size-4" />
-                    Logout Account
+                  <button className="w-full flex items-center gap-2 p-2 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl font-semibold transition-colors">
+                    <LogOut className="size-4" /> Keluar
                   </button>
                 </form>
-              </div>
-            </PopoverPanel>
+             </PopoverPanel>
           </Popover>
         </div>
+
       </nav>
     </header>
-  )
+  );
 }

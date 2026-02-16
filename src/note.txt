@@ -44,3 +44,40 @@ Biasanya orang kantor suka narik data ke Excel untuk laporan internal.
 Sekarang petanya hanya menunjukkan angka. Kita bisa buat:
 
     Jika user klik lingkaran di peta, muncul sidebar atau modal yang menunjukkan detail performa khusus cabang itu (siapa OM-nya, tren penjualannya 6 bulan terakhir, dan produk terlaris di cabang tersebut).
+
+################################################################
+wit login
+################################################################
+1. Sinkronisasi Data dengan ClickHouse (The Medallion Journey)
+
+Sesuai rencana kamu di awal, sekarang saatnya memindahkan beban kerja berat dari PostgreSQL ke ClickHouse.
+
+    Target: Pindahkan data sales mentah ke Bronze Layer di ClickHouse.
+
+    Optimasi: Terapkan ORDER BY pada kolom yang sering difilter (misal: tanggal, kode_cabang) di ClickHouse agar grafik ChartSales kamu kilat meski datanya jutaan.
+
+2. Implementasi Client-Side Filtering (The "Boss" Experience)
+
+Di dashboard utama, bos biasanya ingin filter data tanpa refresh halaman.
+
+    Tambahkan Date Range Picker (Bulan ini, 3 Bulan Terakhir, dst).
+
+    Tambahkan Dropdown Cabang (Khusus untuk user dengan role 'ALL').
+
+    Saat filter diganti, ChartSales dan Breakdown Bulanan harus langsung berubah smooth.
+
+3. Halaman "Sales Detail" (The Data Table)
+
+Jangan cuma grafik, user butuh lihat angka pastinya.
+
+    Buat halaman /dashboard/sales.
+
+    Gunakan DataTable (bisa pakai shadcn/ui table) yang punya fitur Search, Pagination, dan Export to Excel.
+
+    Di sini kita bisa mulai pakai ClickHouse Dictionaries untuk join data produk atau cabang secara instan.
+
+4. Peningkatan Keamanan Session
+
+Sekarang session kamu masih JSON biasa di cookie.
+
+    Next step: Bungkus session tersebut pakai JWT (JSON Web Token) atau enkripsi sederhana agar data role dan id tidak bisa dimanipulasi oleh user yang iseng lewat inspect element.

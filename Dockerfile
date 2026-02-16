@@ -12,6 +12,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Pastikan environment variable dikirim saat build jika diperlukan
 ENV NEXT_TELEMETRY_DISABLED 1
+# ... (set-up base image node)
+COPY prisma ./prisma/
+RUN npx prisma generate
 
 RUN npm run build
 
