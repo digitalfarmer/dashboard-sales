@@ -20,7 +20,8 @@ build_and_push:
     - echo "Pushing image..."
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
-
+    - docker image prune -f
+    
 deploy_to_k3s:
   stage: deploy
   script:
