@@ -4,14 +4,13 @@ stages:
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
-  # Pastikan nama image sesuai URL proyek Anda
   IMAGE_NAME: "root/dashboardbsp"
   TAG: $CI_COMMIT_SHORT_SHA
 
 build_and_push:
   stage: build
   script:
-    # Gunakan Deploy Token yang punya akses write_registry
+    # Login ke registry lokal
     - echo "gldt-vqxpX9x6W9x_dmymZEBh" | docker login 192.168.21.10:5005 -u "gitlab+deploy-token-4" --password-stdin
     
     - echo "Building image..."
@@ -22,11 +21,14 @@ build_and_push:
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
 
-  deploy_to_k3s:
+deploy_to_k3s:
   stage: deploy
   script:
     - kubectl config use-context default
+    # Menerapkan perubahan Service (port 30081 -> 3001)
     - kubectl apply -f service.yaml
+    
+    # Menyuntikkan konfigurasi ClickHouse ke dalam Deployment
     - |
       kubectl set env deployment/dashboard-bsp \
         CLICKHOUSE_HOST="192.168.21.31" \
@@ -34,4 +36,9 @@ build_and_push:
         CLICKHOUSE_USER="admindb" \
         CLICKHOUSE_PASS="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi"
+    
+    # Update image dengan nama container yang benar: dashboardbsp
     - kubectl set image deployment/dashboard-bsp dashboardbsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
+  only:
+    - main
+  when: manual
