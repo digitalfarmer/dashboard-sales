@@ -26,7 +26,7 @@ deploy_to_k3s:
   stage: deploy
   script:
     - kubectl config use-context default
-    - kubectl set image deployment/dashboard-bsp dashboard-bsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
+    - kubectl set image deployment/dashboardbsp dashboardbsp=$REGISTRY_URL/$IMAGE_NAME:$TAG -n production
   only:
     - main
   when: manual
