@@ -25,19 +25,14 @@ deploy_to_k3s:
   stage: deploy
   script:
     - kubectl config use-context default
-    # Menerapkan perubahan Service (port 30081 -> 3001)
     - kubectl apply -f service.yaml
-    
-    # Menyuntikkan konfigurasi ClickHouse ke dalam Deployment
     - |
       kubectl set env deployment/dashboard-bsp \
-        CLICKHOUSE_HOST="192.168.21.31" \
+        CLICKHOUSE_HOST="http://192.168.21.31" \
         CLICKHOUSE_PORT="8123" \
         CLICKHOUSE_USER="admindb" \
         CLICKHOUSE_PASS="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi"
-    
-    # Update image dengan nama container yang benar: dashboardbsp
     - kubectl set image deployment/dashboard-bsp dashboardbsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
   only:
     - main
