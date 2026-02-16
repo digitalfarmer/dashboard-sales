@@ -1,6 +1,7 @@
 stages:
   - build
   - deploy
+  - cleanup
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
@@ -33,14 +34,25 @@ deploy_to_k3s:
         CLICKHOUSE_PASSWORD="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi"
     - kubectl set image deployment/dashboard-bsp dashboardbsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
-  
-  # Fitur Environment untuk Rollback
   environment:
     name: production
     url: http://192.168.21.10:30081
-    on_stop: stop_production # Opsional: jika ingin fitur stop
-  
-  resource_group: production # Menghindari deploy ganda bersamaan
+    on_stop: stop_production
+  resource_group: production
   only:
     - main
   when: manual
+
+# Job baru untuk mengatasi error "on_stop job not defined"
+stop_production:
+  stage: cleanup
+  script:
+    - kubectl config use-context default
+    - kubectl delete deployment dashboard-bsp
+    - kubectl delete svc dashboard-bsp-service
+  environment:
+    name: production
+    action: stop
+  when: manual
+  only:
+    - main
