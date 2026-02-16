@@ -1,6 +1,7 @@
 "use client";
+
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import dynamicNext from 'next/dynamic';
 import SalesChart from '@/components/SalesChart';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import FilterBar from '@/components/FilterBar';
@@ -8,11 +9,15 @@ import TopProductsTable from '@/components/TopProductsTable';
 import SummaryCards from '@/components/SummaryCards';
 import { SkeletonCard, SkeletonTable } from '@/components/LoadingSkeleton';
 
-const DistributionMap = dynamic(() => import('@/components/DistributionMap'), {
+// 1. Dynamic Import untuk Komponen Berat / Browser-only
+const DistributionMap = dynamicNext(() => import('@/components/DistributionMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-[500px] w-full bg-gray-100 animate-pulse flex items-center justify-center rounded-xl">
-      Prepare Peta Distribusi...
+    <div className="h-[500px] w-full bg-gray-100 animate-pulse flex items-center justify-center rounded-xl border border-dashed border-gray-300">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+        <p className="text-sm text-gray-500 font-medium">Menyiapkan Peta Distribusi...</p>
+      </div>
     </div>
   )
 });
@@ -20,44 +25,68 @@ const DistributionMap = dynamic(() => import('@/components/DistributionMap'), {
 export default function Dashboard() {
   const currentYear = new Date().getFullYear().toString();
 
+  // 2. States untuk Filter
   const [selectedTahun, setSelectedTahun] = useState(currentYear);
   const [selectedCabang, setSelectedCabang] = useState('all');
   const [selectedDivisi, setSelectedDivisi] = useState('all');
 
-  // Logic fetching & kalkulasi summary sudah dipindah ke sini
-  const { data, topProducts, mapData, isLoading, error, summary, trends, lastUpdated } =
-    useDashboardData(selectedTahun, selectedCabang, selectedDivisi);
+  // 3. Data Fetching via Custom Hook
+  const { 
+    data, 
+    topProducts, 
+    mapData, 
+    isLoading, 
+    error, 
+    summary, 
+    trends, 
+    lastUpdated 
+  } = useDashboardData(selectedTahun, selectedCabang, selectedDivisi);
 
-  // State untuk dropdown filter (Master Data)
-  const [listFilters, setListFilters] = useState({ cabang: [], divisi: [], tahun: [] });
+  // 4. State untuk Master Data Filter (diambil dari API)
+  const [listFilters, setListFilters] = useState({ 
+    cabang: [], 
+    divisi: [], 
+    tahun: [] 
+  });
 
   useEffect(() => {
+    let isMounted = true;
+    
+    // Mengambil master data filter untuk dropdown
     fetch('/api/filters')
-      .then(res => res.json())
-      .then(setListFilters)
-      .catch(err => console.error("Gagal load filter:", err));
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
+      .then(val => {
+        if (isMounted) setListFilters(val);
+      })
+      .catch(err => {
+        console.error("Gagal load filter master data:", err);
+      });
+
+    return () => { isMounted = false; };
   }, []);
 
   return (
-    <main className="p-8 bg-gray-50 min-h-screen">
+    <main className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
 
-        {/* Judul & Filter Bar */}
-        <div className="flex justify-between items-start mb-8">
-          {/* Bungkus Judul dan Indikator jadi satu grup */}
+        {/* --- HEADER SECTION --- */}
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">BSP Dashboard</h1>
-
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+              BSP Sales Dashboard
+            </h1>
+            <p className="text-xs text-slate-500 mt-2 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm w-fit border border-slate-100">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              Update terakhir: {lastUpdated || "--:--:--"}
+              Update data terakhir: <span className="font-semibold text-slate-700">{lastUpdated || "--:--:--"}</span>
             </p>
           </div>
 
-          {/* FilterBar akan otomatis terdorong ke kanan karena justify-between */}
           <FilterBar
             selectedTahun={selectedTahun}
             setSelectedTahun={setSelectedTahun}
@@ -71,46 +100,67 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* --- ERROR STATE --- */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-center gap-3">
-            <div className="text-red-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-center gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+            <div className="bg-red-100 p-2 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-red-800">Ups! Ada Masalah</h3>
-              <p className="text-xs text-red-600">{error}.</p>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-red-800">Gangguan Koneksi</h3>
+              <p className="text-xs text-red-600 font-medium">{error}</p>
             </div>
-            <button onClick={() => window.location.reload()} className="ml-auto bg-red-100 hover:bg-red-200 text-red-800 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors">
-              Retry
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-white hover:bg-red-50 text-red-700 text-xs font-bold py-2 px-4 border border-red-200 rounded-lg transition-all shadow-sm active:scale-95"
+            >
+              Coba Lagi
             </button>
           </div>
         )}
 
+        {/* --- MAIN CONTENT --- */}
         {isLoading ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <SkeletonTable />
               <SkeletonTable />
             </div>
-          </>
+          </div>
         ) : (
-          <>
-            {/* Gunakan {...summary} untuk mengoper hasil kalkulasi dari hook */}
+          <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Kartu Ringkasan Angka */}
             <SummaryCards {...summary} trends={trends} />
 
-            {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6"> */}
-            <SalesChart data={data} />
-            <TopProductsTable products={topProducts} />
-            {/* </div> */}
-
-            <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-              <h2 className="text-lg font-semibold mb-4 text-slate-700">Peta Sebaran Nasional</h2>
-              <DistributionMap data={mapData} />
+            {/* Chart & Tabel Produk Terlaris */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <SalesChart data={data} />
+              </div>
+              <div className="lg:col-span-1">
+                <TopProductsTable products={topProducts} />
+              </div>
             </div>
-          </>
+
+            {/* Peta Distribusi */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800">Peta Sebaran Nasional</h2>
+                  <p className="text-xs text-slate-500">Distribusi penjualan berdasarkan wilayah cabang</p>
+                </div>
+                <div className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold uppercase tracking-wider">
+                  Live Map
+                </div>
+              </div>
+              <div className="rounded-lg overflow-hidden border border-slate-50">
+                <DistributionMap data={mapData} />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </main>
