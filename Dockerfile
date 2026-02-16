@@ -6,16 +6,18 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Stage 2: Build the app
+# Stage 2: Build the app
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Menggunakan format ENV key=value untuk menghilangkan warning
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Paksa instalasi pg dan generate prisma tepat sebelum build
-RUN npm install pg @prisma/adapter-pg && npx prisma generate
+# PERBAIKAN: Tambahkan @types/pg agar TypeScript tidak error saat build
+RUN npm install pg @prisma/adapter-pg && \
+    npm install --save-dev @types/pg && \
+    npx prisma generate
 
 # Jalankan build
 RUN npm run build
