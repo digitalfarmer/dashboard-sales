@@ -1,17 +1,15 @@
 version: '3.8'
 
 services:
-  # Database Baru: PostgreSQL
   db:
     image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password_rahasia}
-      POSTGRES_DB: ${POSTGRES_DB:-bi_system_db}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Port ini opsional dibuka jika ingin remote dari laptop (DBeaver/Navicat)
     ports:
       - "5432:5432"
 
@@ -21,9 +19,8 @@ services:
     environment:
       - PORT=3001
       - HOSTNAME=0.0.0.0 
-      # URL Database untuk Prisma (Penting: pakai nama service 'db' sebagai host)
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
-      # ClickHouse tetap seperti sebelumnya
+      # Tambahkan kutip tunggal di sini supaya password aman
+      - DATABASE_URL='postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public'
       - CLICKHOUSE_HOST=${CLICKHOUSE_HOST}
       - CLICKHOUSE_USER=${CLICKHOUSE_USER}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
