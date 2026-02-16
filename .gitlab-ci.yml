@@ -1,26 +1,25 @@
 stages:
   - build
-  - deploy
+  - push
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
   IMAGE_NAME: "root/dashboard-bsp"
   TAG: $CI_COMMIT_SHORT_SHA
 
-build_project:
+build_and_push:
   stage: build
-  tags:
-    - k3s-prod-21-10 # DISESUAIKAN: Sesuai dengan tag di Runner #2
   script:
+    # 1. Pastikan Login menggunakan kredensial yang tepat
+    # Jika registry Anda tidak pakai password, baris ini bisa dilewati
+    - echo "Logging in to $REGISTRY_URL..."
+    - docker login $REGISTRY_URL -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    
+    # 2. Build image
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
+    
+    # 3. Push ke Registry
+    - echo "Pushing image to $REGISTRY_URL..."
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
-
-deploy_to_k3s:
-  stage: deploy
-  tags:
-    - k3s-prod-21-10 # DISESUAIKAN: Sesuai dengan tag di Runner #2
-  script:
-    - .\kubectl.exe apply -f k3s-bsp.yaml
-    - .\kubectl.exe rollout restart deployment/dashboard-bsp
