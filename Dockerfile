@@ -31,6 +31,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# --- TAMBAHKAN INI ---
+# Ambil folder Prisma Generated (Sesuai error: src/generated/prisma)
+COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
+
 # Tambahkan ini supaya file Prisma & Seed ada di container runner
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./
