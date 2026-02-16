@@ -3,17 +3,20 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json ./
-# Menggunakan npm ci agar instalasi lebih cepat dan konsisten
+# Menggunakan npm ci agar instalasi konsisten
 RUN npm ci
 
 # Stage 2: Build the app
 FROM node:20-alpine AS builder
 WORKDIR /app
+# Ambil node_modules dari stage deps
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# --- TAMBAHAN UNTUK PRISMA ---
-# Generate Prisma Client sebelum melakukan build Next.js
+# --- PERBAIKAN: Instal dependensi pg & generate Prisma ---
+# Kita paksa install pg di sini untuk memastikan adapter database tersedia
+RUN npm install pg @prisma/adapter-pg
+# Generate client berdasarkan skema yang ada di folder prisma
 RUN npx prisma generate
 
 ENV NEXT_TELEMETRY_DISABLED 1
@@ -29,19 +32,17 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy file publik dan folder statis
+# Copy hasil build standalone
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# --- TAMBAHAN UNTUK RUNNER ---
-# Memastikan file prisma terbawa agar query database berfungsi di server
-COPY --from=builder /app/prisma ./prisma 
+# Pastikan folder prisma juga terbawa ke runner untuk runtime query
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma 
 
 USER nextjs
 
 EXPOSE 3001
 ENV PORT 3001
 
-# Jalankan aplikasi menggunakan server.js bawaan Next.js standalone
 CMD ["node", "server.js"]
