@@ -16,6 +16,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 COPY package*.json ./
 COPY prisma ./prisma/
 RUN npm install
+COPY prisma.config.ts ./
 RUN npx prisma generate
 COPY . .
 RUN npm run build
