@@ -1,11 +1,9 @@
 stages:
   - build
   - deploy
-  - cleanup
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
-  # Menggunakan variabel bawaan agar path registry SAMA dengan path project
   IMAGE_NAME: $CI_PROJECT_PATH 
   TAG: $CI_COMMIT_SHORT_SHA
 
@@ -13,10 +11,8 @@ build_and_push:
   stage: build
   script:
     - echo "gldt-vqxpX9x6W9x_dmymZEBh" | docker login $REGISTRY_URL -u "gitlab+deploy-token-4" --password-stdin
-    - echo "Building image for $REGISTRY_URL/$IMAGE_NAME:$TAG"
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
-    - echo "Pushing images..."
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
     - docker image prune -f
@@ -25,7 +21,6 @@ deploy_to_k3s:
   stage: deploy
   script:
     - kubectl config use-context default
-    # Pastikan file k3s-bsp.yaml ada di root repo Anda
     - kubectl apply -f k3s-bsp.yaml 
     - kubectl apply -f service.yaml
     - |
@@ -36,24 +31,11 @@ deploy_to_k3s:
         CLICKHOUSE_PASS="bsp123" \
         CLICKHOUSE_PASSWORD="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi"
-    # Pastikan nama container 'dashboard' (sesuai k3s-bsp.yaml)
     - kubectl set image deployment/dashboard-bsp dashboard=$REGISTRY_URL/$IMAGE_NAME:$TAG
   environment:
     name: production
     url: http://192.168.21.10:30011
-    on_stop: stop_production
+    # Bagian on_stop DIHAPUS agar tombol "Stop" hilang
   only:
     - main
   when: manual
-
-stop_production:
-  stage: cleanup
-  script:
-    - kubectl config use-context default
-    - kubectl scale deployment dashboard-bsp --replicas=0
-  environment:
-    name: production
-    action: stop
-  when: manual
-  only:
-    - main
