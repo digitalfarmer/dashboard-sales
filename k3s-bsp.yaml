@@ -12,6 +12,9 @@ spec:
       labels:
         app: dashboard-bsp
     spec:
+      # Tambahkan bagian ini untuk otentikasi ke registry
+      imagePullSecrets:
+      - name: regcred
       containers:
       - name: dashboard
         image: 192.168.21.10:5005/root/dashboard-bsp:latest
@@ -19,7 +22,6 @@ spec:
         ports:
         - containerPort: 3001
         env:
-        # Menggunakan kredensial database yang Anda berikan
         - name: DATABASE_URL
           value: "postgresql://postgres:postgres@192.168.21.182:5423/dashboard_sales?schema=public"
 ---
