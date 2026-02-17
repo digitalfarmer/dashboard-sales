@@ -5,7 +5,7 @@ stages:
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
-  IMAGE_NAME: "root/dashboardbsp"
+  IMAGE_NAME: "root/dashboard-bsp" # Sesuaikan dengan nama di registry Anda
   TAG: $CI_COMMIT_SHORT_SHA
 
 build_and_push:
@@ -24,7 +24,10 @@ deploy_to_k3s:
   stage: deploy
   script:
     - kubectl config use-context default
+    # 1. Selalu jalankan apply manifest terlebih dahulu agar Deployment dibuat jika belum ada
+    - kubectl apply -f k3s-bsp.yaml 
     - kubectl apply -f service.yaml
+    # 2. Update Environment Variables
     - |
       kubectl set env deployment/dashboard-bsp \
         CLICKHOUSE_URL="http://192.168.21.31:8123" \
@@ -33,7 +36,8 @@ deploy_to_k3s:
         CLICKHOUSE_PASS="bsp123" \
         CLICKHOUSE_PASSWORD="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi"
-    - kubectl set image deployment/dashboard-bsp dashboardbsp=$REGISTRY_URL/$IMAGE_NAME:$TAG
+    # 3. PERBAIKAN: Nama container diubah dari 'dashboardbsp' menjadi 'dashboard' sesuai YAML Anda
+    - kubectl set image deployment/dashboard-bsp dashboard=$REGISTRY_URL/$IMAGE_NAME:$TAG
   environment:
     name: production
     url: http://192.168.21.10:30081
@@ -43,13 +47,12 @@ deploy_to_k3s:
     - main
   when: manual
 
-# Job baru untuk mengatasi error "on_stop job not defined"
 stop_production:
   stage: cleanup
   script:
     - kubectl config use-context default
-    - kubectl delete deployment dashboard-bsp
-    - kubectl delete svc dashboard-bsp-service
+    # Menggunakan scale 0 lebih baik daripada delete agar metadata tetap ada dan rollback lebih cepat
+    - kubectl scale deployment dashboard-bsp --replicas=0
   environment:
     name: production
     action: stop
