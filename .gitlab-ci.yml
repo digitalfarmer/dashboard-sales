@@ -5,17 +5,18 @@ stages:
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
-  IMAGE_NAME: "root/dashboard-bsp" # Sesuaikan dengan nama di registry Anda
+  # Menggunakan variabel bawaan agar path registry SAMA dengan path project
+  IMAGE_NAME: $CI_PROJECT_PATH 
   TAG: $CI_COMMIT_SHORT_SHA
 
 build_and_push:
   stage: build
   script:
-    - echo "gldt-vqxpX9x6W9x_dmymZEBh" | docker login 192.168.21.10:5005 -u "gitlab+deploy-token-4" --password-stdin
-    - echo "Building image..."
+    - echo "gldt-vqxpX9x6W9x_dmymZEBh" | docker login $REGISTRY_URL -u "gitlab+deploy-token-4" --password-stdin
+    - echo "Building image for $REGISTRY_URL/$IMAGE_NAME:$TAG"
     - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
     - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
-    - echo "Pushing image..."
+    - echo "Pushing images..."
     - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
     - docker push $REGISTRY_URL/$IMAGE_NAME:latest
     - docker image prune -f
@@ -24,10 +25,9 @@ deploy_to_k3s:
   stage: deploy
   script:
     - kubectl config use-context default
-    # 1. Selalu jalankan apply manifest terlebih dahulu agar Deployment dibuat jika belum ada
+    # Pastikan file k3s-bsp.yaml ada di root repo Anda
     - kubectl apply -f k3s-bsp.yaml 
     - kubectl apply -f service.yaml
-    # 2. Update Environment Variables
     - |
       kubectl set env deployment/dashboard-bsp \
         CLICKHOUSE_URL="http://192.168.21.31:8123" \
@@ -36,13 +36,12 @@ deploy_to_k3s:
         CLICKHOUSE_PASS="bsp123" \
         CLICKHOUSE_PASSWORD="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi"
-    # 3. PERBAIKAN: Nama container diubah dari 'dashboardbsp' menjadi 'dashboard' sesuai YAML Anda
+    # Pastikan nama container 'dashboard' (sesuai k3s-bsp.yaml)
     - kubectl set image deployment/dashboard-bsp dashboard=$REGISTRY_URL/$IMAGE_NAME:$TAG
   environment:
     name: production
-    url: http://192.168.21.10:30081
+    url: http://192.168.21.10:30011
     on_stop: stop_production
-  resource_group: production
   only:
     - main
   when: manual
@@ -51,7 +50,6 @@ stop_production:
   stage: cleanup
   script:
     - kubectl config use-context default
-    # Menggunakan scale 0 lebih baik daripada delete agar metadata tetap ada dan rollback lebih cepat
     - kubectl scale deployment dashboard-bsp --replicas=0
   environment:
     name: production
