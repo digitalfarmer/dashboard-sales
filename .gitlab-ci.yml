@@ -23,13 +23,13 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    # 1. Pastikan folder saat ini bisa ditulis oleh runner
+    # 1. HAPUS PAKSA node_modules yang bikin masalah sebelum npm install dimulai
+    - sudo rm -rf node_modules
     - sudo chown -R gitlab-runner:gitlab-runner .
     
-    # 2. Jalankan docker dengan UID user host agar file yang dibuat bukan milik root
+    # 2. Jalankan docker dengan user root saja (default) tapi langsung perbaiki izin di dalam container
     - |
       docker run --rm \
-        --user "$(id -u):$(id -g)" \
         -v "$(pwd):/app" \
         -w /app \
         -e DATABASE_URL="$DATABASE_URL" \
@@ -38,10 +38,11 @@ database_migration:
           npm install --quiet --no-audit --no-fund && 
           npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > init.sql &&
           npx prisma migrate resolve --applied 000000000000_init || true &&
-          npx prisma migrate deploy
+          npx prisma migrate deploy &&
+          chown -R $(id -u):$(id -g) node_modules .prisma prisma/migrations
         "
     
-    # 3. Bersihkan kembali izin (opsional tapi baik untuk keamanan)
+    # 3. Pastikan sekali lagi folder project bersih dan bisa diakses git
     - sudo chown -R gitlab-runner:gitlab-runner .
   only:
     - main
