@@ -33,7 +33,10 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma.config.ts ./ 
 
 # Install 'tsx' secara global di runner buat jalanin seed
-RUN npm install -g tsx
+#RUN npm install -g tsx
+RUN npm install -g tsx prisma
+# Tambahkan ini jika file seed/config kamu tetap butuh dotenv
+RUN npm install dotenv
 
 EXPOSE 3001
 ENV PORT 3001

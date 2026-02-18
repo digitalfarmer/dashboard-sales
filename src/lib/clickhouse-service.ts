@@ -13,15 +13,17 @@ const client = createClient({
   }
 });
 export async function getSalesMonthlyMetrics(user: { role: string; kodeCabang: string }) {
+
+  const currentYear = new Date().getFullYear();
   // 1. Susun whereClause dinamis
   // Jika Super Admin, tampilkan semua (tidak ada filter cabang)
   // Jika Cabang, filter berdasarkan kolom kode_cabang di view kamu
- let whereClause = "WHERE 1=1"; // Default yang selalu benar
+ let whereClause = `WHERE 1=1 and fkyear = '${currentYear}'`; // Default yang selalu benar  
  
 
 if (user.role !== 'SUPER_ADMIN' && user.kodeCabang !== 'ALL') {
   // PASTIKAN nama kolom di view ClickHouse kamu memang 'kode_cabang'
-  whereClause += ` AND kode_cabang = '${user.kodeCabang}' AND fkyear = 2025`; // Tambahkan filter tahun juga biar data gak terlalu berat (sesuaikan dengan kebutuhan)
+  whereClause += ` AND kode_cabang = '${user.kodeCabang}' AND fkyear = '${currentYear}'`;
 }
   // 2. Masukkan Query kamu yang sudah dipoles
   const query = `
