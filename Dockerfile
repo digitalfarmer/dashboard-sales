@@ -10,9 +10,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-<<<<<<< HEAD
-ENV NEXT_TELEMETRY_DISABLED 1
-=======
+
 
 ENV NEXT_TELEMETRY_DISABLED=1
 # URL Dummy hanya agar Prisma tidak error saat kompilasi
@@ -21,7 +19,7 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 RUN npm install pg @prisma/adapter-pg && \
     npm install --save-dev @types/pg && \
     npx prisma generate
->>>>>>> 359c404dfe5b6f69ab4e53745969a72327d1a309
+
 
 # Generate Prisma Client (ke custom path src/generated/prisma)
 RUN npx prisma generate
@@ -32,14 +30,12 @@ RUN npm run build
 # Stage 3: Production runner
 FROM node:20-alpine AS runner
 WORKDIR /app
-<<<<<<< HEAD
-ENV NODE_ENV production
-=======
+
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3001
->>>>>>> 359c404dfe5b6f69ab4e53745969a72327d1a309
+
 
 # Install tool dasar
 RUN apk add --no-cache libc6-compat
