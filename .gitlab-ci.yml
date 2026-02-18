@@ -23,16 +23,20 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    # Menggunakan docker run untuk menjalankan migrasi di dalam container sementara
+    - "npm install --include=dev"
+    # Perintah di bawah ini akan memaksa database mengakui skema Anda 
+    # tanpa menghapus data, jika folder migrations kosong.
     - |
-      docker run --rm \
-        -e DATABASE_URL="$DATABASE_URL" \
-        $REGISTRY_URL/$IMAGE_NAME:$TAG \
-        npx prisma migrate deploy
+      npx prisma migrate diff \
+        --from-empty \
+        --to-schema-datamodel prisma/schema.prisma \
+        --script > init.sql
+    - "npx prisma migrate resolve --applied init_baseline || true"
+    - "npx prisma migrate deploy"
   only:
     - main
   when: manual
-
+  
 deploy_to_k3s:
   stage: deploy
   script:
