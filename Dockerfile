@@ -21,25 +21,22 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV production
 
-# Ambil hasil build standalone
+RUN apk add --no-cache libc6-compat
+
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-
-# ANGKUT PRISMA KE SINI (Kunci biar nggak manual lagi)
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma.config.ts ./ 
 
-# Install 'tsx' secara global di runner buat jalanin seed
-#RUN npm install -g tsx
+# Install dependencies yang dibutuhkan saat runtime
 RUN npm install -g tsx prisma
-# Tambahkan ini jika file seed/config kamu tetap butuh dotenv
-RUN npm install dotenv
+RUN npm install @prisma/client @prisma/adapter-pg
 
 EXPOSE 3001
 ENV PORT 3001
 
 # Script sakti: Migrasi dulu, Seed dulu, baru nyalain server
-CMD npx prisma migrate deploy && npx tsx prisma/seed.ts && node server.js
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && node server.js"]

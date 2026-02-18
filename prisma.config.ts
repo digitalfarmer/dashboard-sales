@@ -5,5 +5,8 @@ export default defineConfig({
   migrations: {
     seed: 'tsx prisma/seed.ts',
   },
-  // Prisma 7 sudah pintar baca DATABASE_URL dari env otomatis
+  // Tambahkan ini biar 'migrate deploy' nggak protes
+  datasource: {
+    url: process.env.DATABASE_URL,
+  },
 });
