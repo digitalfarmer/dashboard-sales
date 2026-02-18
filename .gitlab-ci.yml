@@ -9,7 +9,7 @@ variables:
   TAG: $CI_COMMIT_SHORT_SHA
   # Konfigurasi Database
   DATABASE_URL: "postgresql://postgres:postgres@192.168.21.182:5423/dashboard_sales"
-  # Mencegah error permission di awal job
+  # Mencegah error permission di awall job
   GIT_CLEAN_FLAGS: -ffdx -e node_modules/
 
 build_and_push:
