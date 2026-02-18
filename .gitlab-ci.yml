@@ -23,16 +23,14 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    - "npm install --include=dev"
-    # Perintah di bawah ini akan memaksa database mengakui skema Anda 
-    # tanpa menghapus data, jika folder migrations kosong.
+    # Kita jalankan container node sementara hanya untuk eksekusi prisma
     - |
-      npx prisma migrate diff \
-        --from-empty \
-        --to-schema-datamodel prisma/schema.prisma \
-        --script > init.sql
-    - "npx prisma migrate resolve --applied init_baseline || true"
-    - "npx prisma migrate deploy"
+      docker run --rm \
+        -v "$(pwd):/app" \
+        -w /app \
+        -e DATABASE_URL="$DATABASE_URL" \
+        node:18-alpine \
+        sh -c "npx prisma migrate deploy"
   only:
     - main
   when: manual
