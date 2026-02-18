@@ -25,7 +25,9 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    - sudo chown -R gitlab-runner:gitlab-runner .
+    # 1. Gunakan sudo untuk memastikan folder bersih di awal jika ada sisa root
+    - "sudo chown -R gitlab-runner:gitlab-runner ."
+    
     - |
       docker run --rm \
         -v "$(pwd):/app" \
@@ -34,22 +36,9 @@ database_migration:
         node:22-alpine \
         sh -c "
           npm install --silent && 
-          # 1. Pastikan folder migrations ada
-          mkdir -p prisma/migrations/000_init_baseline &&
-          
-          # 2. Perintah migrate diff terbaru untuk Prisma 7
-          npx prisma migrate diff \
-            --from-empty \
-            --to-schema prisma/schema.prisma \
-            --script > prisma/migrations/000_init_baseline/migration.sql &&
-          
-          # 3. Tandai sebagai 'applied' agar P3005 hilang
-          npx prisma migrate resolve --applied 000_init_baseline || true &&
-          
-          # 4. Jalankan deploy
-          npx prisma migrate deploy
+          # Cara 'Brute Force' Baseline: Paksa sinkronisasi skema tanpa buat file fisik di host
+          npx prisma db push --accept-data-loss
         "
-    - sudo chown -R gitlab-runner:gitlab-runner .
   only:
     - main
   when: manual
