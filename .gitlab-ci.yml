@@ -23,13 +23,12 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    # Kita jalankan install dan migrate dalam satu urutan di dalam container
     - |
       docker run --rm \
         -v "$(pwd):/app" \
         -w /app \
         -e DATABASE_URL="$DATABASE_URL" \
-        node:18-alpine \
+        node:22-alpine \
         sh -c "npm install && npx prisma migrate deploy"
   only:
     - main
