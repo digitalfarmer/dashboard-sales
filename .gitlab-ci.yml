@@ -29,7 +29,12 @@ database_migration:
         -w /app \
         -e DATABASE_URL="$DATABASE_URL" \
         node:22-alpine \
-        sh -c "npm install && npx prisma migrate deploy"
+        sh -c "
+          npm install && 
+          npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > init.sql &&
+          npx prisma migrate resolve --applied 000000000000_init || true &&
+          npx prisma migrate deploy
+        "
   only:
     - main
   when: manual
