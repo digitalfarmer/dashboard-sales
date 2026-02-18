@@ -23,10 +23,12 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    # Mengunduh dependensi agar npx bisa menjalankan prisma
-    - "npm install --include=dev"
-    # Menjalankan migrasi ke database sales
-    - "npx prisma migrate deploy"
+    # Menggunakan docker run untuk menjalankan migrasi di dalam container sementara
+    - |
+      docker run --rm \
+        -e DATABASE_URL="$DATABASE_URL" \
+        $REGISTRY_URL/$IMAGE_NAME:$TAG \
+        npx prisma migrate deploy
   only:
     - main
   when: manual
