@@ -9,7 +9,7 @@ variables:
   TAG: $CI_COMMIT_SHORT_SHA
   # Konfigurasi Database
   DATABASE_URL: "postgresql://postgres:postgres@192.168.21.182:5423/dashboard_sales"
-  # Mengabaikan pembersihan node_modules oleh git agar tidak terjadi permission error di awal job
+  # Mencegah error permission di awal job
   GIT_CLEAN_FLAGS: -ffdx -e node_modules/
 
 build_and_push:
@@ -25,9 +25,7 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    # 1. Gunakan sudo untuk memastikan folder bersih di awal jika ada sisa root
     - "sudo chown -R gitlab-runner:gitlab-runner ."
-    
     - |
       docker run --rm \
         -v "$(pwd):/app" \
@@ -36,7 +34,6 @@ database_migration:
         node:22-alpine \
         sh -c "
           npm install --silent && 
-          # Cara 'Brute Force' Baseline: Paksa sinkronisasi skema tanpa buat file fisik di host
           npx prisma db push --accept-data-loss
         "
   only:
@@ -57,7 +54,8 @@ deploy_to_k3s:
         CLICKHOUSE_PASSWORD="bsp123" \
         CLICKHOUSE_DB="dbw_bsp_konsolidasi" \
         DATABASE_URL="$DATABASE_URL"
-    - "kubectl set image deployment/dashboard-bsp dashboard-bsp=$REGISTRY_URL/$IMAGE_NAME:$TAG"
+    # PERBAIKAN: dashboard-bsp diganti menjadi dashboard sesuai file k3s-bsp.yaml Anda
+    - "kubectl set image deployment/dashboard-bsp dashboard=$REGISTRY_URL/$IMAGE_NAME:$TAG"
   environment:
     name: production
     url: http://192.168.21.10:30011
