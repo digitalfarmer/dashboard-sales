@@ -23,23 +23,25 @@ build_and_push:
 database_migration:
   stage: migrate
   script:
-    # 1. Perbaiki izin folder agar bisa ditulis ulang (Solusi Permission Denied)
+    # 1. Pastikan folder saat ini bisa ditulis oleh runner
     - sudo chown -R gitlab-runner:gitlab-runner .
     
+    # 2. Jalankan docker dengan UID user host agar file yang dibuat bukan milik root
     - |
       docker run --rm \
+        --user "$(id -u):$(id -g)" \
         -v "$(pwd):/app" \
         -w /app \
         -e DATABASE_URL="$DATABASE_URL" \
         node:22-alpine \
         sh -c "
-          npm install --quiet && 
+          npm install --quiet --no-audit --no-fund && 
           npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > init.sql &&
           npx prisma migrate resolve --applied 000000000000_init || true &&
           npx prisma migrate deploy
         "
     
-    # 2. Kembalikan izin ke gitlab-runner setelah docker selesai
+    # 3. Bersihkan kembali izin (opsional tapi baik untuk keamanan)
     - sudo chown -R gitlab-runner:gitlab-runner .
   only:
     - main
