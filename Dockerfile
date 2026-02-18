@@ -48,4 +48,5 @@ RUN npm install @prisma/client @prisma/adapter-pg
 EXPOSE 3001
 ENV PORT 3001
 
-CMD ["sh", "-c", "npx prisma db push --skip-generate && npx tsx prisma/seed.ts && node server.js"]
+
+CMD ["sh", "-c", "npx prisma db push && npx tsx prisma/seed.ts && node server.js"]
