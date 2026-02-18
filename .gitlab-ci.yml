@@ -34,14 +34,19 @@ database_migration:
         node:22-alpine \
         sh -c "
           npm install --silent && 
-          # 1. Jika folder migrations kosong, buat folder migrasi awal secara otomatis
-          if [ ! -d 'prisma/migrations' ] || [ -z \"\$(ls -A prisma/migrations)\" ]; then
-            mkdir -p prisma/migrations/000_init_baseline &&
-            npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/000_init_baseline/migration.sql
-          fi &&
-          # 2. Tandai migrasi tersebut sebagai 'sudah dijalankan' agar tidak error P3005
+          # 1. Pastikan folder migrations ada
+          mkdir -p prisma/migrations/000_init_baseline &&
+          
+          # 2. Perintah migrate diff terbaru untuk Prisma 7
+          npx prisma migrate diff \
+            --from-empty \
+            --to-schema prisma/schema.prisma \
+            --script > prisma/migrations/000_init_baseline/migration.sql &&
+          
+          # 3. Tandai sebagai 'applied' agar P3005 hilang
           npx prisma migrate resolve --applied 000_init_baseline || true &&
-          # 3. Jalankan migrasi normal
+          
+          # 4. Jalankan deploy
           npx prisma migrate deploy
         "
     - sudo chown -R gitlab-runner:gitlab-runner .
