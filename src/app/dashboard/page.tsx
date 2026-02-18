@@ -49,7 +49,7 @@ export default async function DashboardPage() {
             <span>Analytics Real-time</span>
           </div>
           {/* ... Header ... */}
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight dark:text-slate-200">
             Executive <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">Dashboard</span>
           </h1>
           <div className="flex items-center gap-3 text-slate-500">

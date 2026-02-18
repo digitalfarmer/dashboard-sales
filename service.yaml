@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-bsp-service
+spec:
+  selector:
+    app: dashboard-bsp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3001  # Harus 3001 sesuai log aplikasi Anda
+      nodePort: 30081
+  type: NodePort
