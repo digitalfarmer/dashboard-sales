@@ -48,5 +48,4 @@ RUN npm install @prisma/client @prisma/adapter-pg
 EXPOSE 3001
 ENV PORT 3001
 
-# Script sakti: Migrasi dulu, Seed dulu, baru nyalain server
-CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && node server.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate && npx tsx prisma/seed.ts && node server.js"]
