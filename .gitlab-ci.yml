@@ -1,33 +1,10 @@
-stages:
-  - build
-  - migrate
-  - deploy
-
-variables:
-  REGISTRY_URL: "192.168.21.10:5005"
-  IMAGE_NAME: $CI_PROJECT_PATH 
-  TAG: $CI_COMMIT_SHORT_SHA
-  # Konfigurasi Database sesuai data yang Anda berikan
-  DATABASE_URL: "postgresql://postgres:postgres@192.168.21.182:5423/dashboard_sales"
-
-build_and_push:
-  stage: build
-  script:
-    - "echo 'gldt-vqxpX9x6W9x_dmymZEBh' | docker login $REGISTRY_URL -u 'gitlab+deploy-token-4' --password-stdin"
-    - "docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG ."
-    - "docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest"
-    - "docker push $REGISTRY_URL/$IMAGE_NAME:$TAG"
-    - "docker push $REGISTRY_URL/$IMAGE_NAME:latest"
-    - "docker image prune -f"
-
 database_migration:
   stage: migrate
   script:
-    # 1. HAPUS PAKSA node_modules yang bikin masalah sebelum npm install dimulai
-    - sudo rm -rf node_modules
+    # 1. Pastikan folder bersih dari file root di awal
     - sudo chown -R gitlab-runner:gitlab-runner .
     
-    # 2. Jalankan docker dengan user root saja (default) tapi langsung perbaiki izin di dalam container
+    # 2. Jalankan migrasi
     - |
       docker run --rm \
         -v "$(pwd):/app" \
@@ -35,37 +12,13 @@ database_migration:
         -e DATABASE_URL="$DATABASE_URL" \
         node:22-alpine \
         sh -c "
-          npm install --quiet --no-audit --no-fund && 
-          npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > init.sql &&
-          npx prisma migrate resolve --applied 000000000000_init || true &&
-          npx prisma migrate deploy &&
-          chown -R $(id -u):$(id -g) node_modules .prisma prisma/migrations
+          npm install --silent --no-progress && 
+          npx prisma migrate resolve --applied 000_init_baseline || true &&
+          npx prisma migrate deploy
         "
     
-    # 3. Pastikan sekali lagi folder project bersih dan bisa diakses git
+    # 3. Bereskan izin lagi setelah selesai
     - sudo chown -R gitlab-runner:gitlab-runner .
-  only:
-    - main
-  when: manual
-  
-deploy_to_k3s:
-  stage: deploy
-  script:
-    - "kubectl config use-context default"
-    - "kubectl apply -f k3s-bsp.yaml"
-    - |
-      kubectl set env deployment/dashboard-bsp \
-        CLICKHOUSE_URL="http://192.168.21.31:8123" \
-        CLICKHOUSE_HOST="http://192.168.21.31:8123" \
-        CLICKHOUSE_USER="admindb" \
-        CLICKHOUSE_PASS="bsp123" \
-        CLICKHOUSE_PASSWORD="bsp123" \
-        CLICKHOUSE_DB="dbw_bsp_konsolidasi" \
-        DATABASE_URL="$DATABASE_URL"
-    - "kubectl set image deployment/dashboard-bsp dashboard-bsp=$REGISTRY_URL/$IMAGE_NAME:$TAG"
-  environment:
-    name: production
-    url: http://192.168.21.10:30011
   only:
     - main
   when: manual
