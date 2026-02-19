@@ -52,7 +52,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma 
-# >>>>>>> 359c404dfe5b6f69ab4e53745969a72327d1a309
+
 
 # 2. Ambil SEMUA node_modules dari builder (KUNCI UTAMA)
 # Ini agar sub-dependencies seperti 'postgres-array' tidak hilang
@@ -64,8 +64,6 @@ COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/package.json ./
 
-#RUN npm install
-# Install dependencies yang dibutuhkan saat runtime (khususnya Prisma Client)
 RUN npm install -g tsx prisma
 RUN npm install @prisma/client @prisma/adapter-pg
 

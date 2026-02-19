@@ -1,58 +1,62 @@
-import { createClient } from '@clickhouse/client';
+//query clickhouse buat dashboard yang ada login nya 
+import { clickhouse } from './clickhouse';
 
-const client = createClient({
-  host: process.env.CLICKHOUSE_HOST || 'http://localhost:8123',
-  username: process.env.CLICKHOUSE_USER || 'default',
-  password: process.env.CLICKHOUSE_PASSWORD || '',
-//   clickhouse_settings: {
-//     connect_timeout: 60,
-//     request_timeout: 60
-//   },
-  keep_alive: {
-    enabled: true
-  }
-});
-export async function getSalesMonthlyMetrics(user: { role: string; kodeCabang: string }) {
+export async function getSalesMonthlyMetrics(user: any, filters?: { branch?: string, category?: string,year?: string }) {
+  // 1. Ambil nilai filter dari URL atau default ke user session
+  const branchFilter = filters?.branch || user.kodeCabang;
+  const categoryFilter = filters?.category || 'ALL';
+  const yearFilter = filters?.year || new Date().getFullYear().toString(); // Default tahun berjalan
 
-  const currentYear = new Date().getFullYear();
-  // 1. Susun whereClause dinamis
-  // Jika Super Admin, tampilkan semua (tidak ada filter cabang)
-  // Jika Cabang, filter berdasarkan kolom kode_cabang di view kamu
- let whereClause = `WHERE 1=1 and fkyear = '${currentYear}'`; // Default yang selalu benar  
- 
-
-if (user.role !== 'SUPER_ADMIN' && user.kodeCabang !== 'ALL') {
-  // PASTIKAN nama kolom di view ClickHouse kamu memang 'kode_cabang'
-  whereClause += ` AND kode_cabang = '${user.kodeCabang}' AND fkyear = '${currentYear}'`;
-}
-  // 2. Masukkan Query kamu yang sudah dipoles
-  const query = `
+  // 2. Susun Query sesuai spek Masbro
+  let query = `
     SELECT 
-        t.fkmonth,
-        -- Kita ambil nama cabang dari tabel master (pakai any atau max karena group by)
-        any(m.nama_cabang) as nama_cabang, 
+        fkmonth,
+        -- 1. Total Penjualan Kotor (Hanya Faktur)
+        toFloat64(SUM(IF(jenis_faktur = 'FAKTUR', netto, 0))) as total_faktur,
         
-        toFloat64(SUM(IF(t.jenis_faktur = 'FAKTUR', t.netto, 0))) as total_faktur,
-        toFloat64(abs(SUM(IF(t.jenis_faktur = 'RETUR', t.netto, 0)))) as total_retur,
-        toFloat64(SUM(t.netto)) as total_netto_bersih,
-        toFloat64(SUM(t.qty_faktur)) as total_qty
-    FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional AS t
-    LEFT JOIN dbw_bsp_konsolidasi.dw_ms_cabang AS m ON t.kode_cabang = m.kode_cabang
-    ${whereClause}
-    GROUP BY t.fkmonth
-    ORDER BY t.fkmonth ASC
+        -- 2. Total Retur (di-absolutkan agar positif untuk grafik)
+        toFloat64(abs(SUM(IF(jenis_faktur = 'RETUR', netto, 0)))) as total_retur,
+        
+        -- 3. Total Netto Bersih (Faktur + Retur)
+        toFloat64(SUM(netto)) as total_netto_bersih,
+
+        -- 4. Total Gross
+        toFloat64(SUM(gross)) as total_gross,
+        
+        -- 5. Total Qty
+        toFloat64(SUM(qty_faktur)) as total_qty
+    FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional
+    WHERE fkyear = ${yearFilter} AND 1=1
+  `;
+
+  // Logika Filter Cabang (Jika SUPER_ADMIN pilih 'ALL', tidak perlu filter kode_cabang)
+  if (branchFilter !== 'ALL') {
+    query += ` AND kode_cabang = '${branchFilter}'`;
+  }
+
+  // Logika Filter Principal/Category
+  if (categoryFilter !== 'ALL') {
+    // Sesuaikan case-sensitive kolom Kode_Principal jika perlu
+    query += ` AND kode_principal = '${categoryFilter}'`;
+  }
+
+  // Grouping bulanan
+  query += ` 
+    GROUP BY fkmonth 
+    ORDER BY fkmonth ASC
   `;
 
   try {
-    const resultSet = await client.query({
+    const resultSet = await clickhouse.query({
       query: query,
       format: 'JSONEachRow',
     });
-
-    return await resultSet.json();
-  } catch (error) {
     
-    console.error("DEBUG CLICKHOUSE ERROR:", error); //
-    throw new Error("Gagal mengambil data dari ClickHouse");
+    const dataset = await resultSet.json();
+    return dataset as any[];
+  } catch (error: any) {
+    console.error("ClickHouse Query Error:", error.message);
+    // Return array kosong agar halaman dashboard tidak crash/putih
+    return []; 
   }
 }
