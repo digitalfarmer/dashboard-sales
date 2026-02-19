@@ -1,28 +1,50 @@
 stages:
   - build
+  - migrate
   - deploy
 
 variables:
   REGISTRY_URL: "192.168.21.10:5005"
   IMAGE_NAME: $CI_PROJECT_PATH 
   TAG: $CI_COMMIT_SHORT_SHA
+  # Konfigurasi Database
+  DATABASE_URL: "postgresql://postgres:postgres@192.168.21.182:5423/dashboard_sales"
+  # Mencegah error permission di awall job
+  GIT_CLEAN_FLAGS: -ffdx -e node_modules/
 
 build_and_push:
   stage: build
   script:
-    - echo "gldt-vqxpX9x6W9x_dmymZEBh" | docker login $REGISTRY_URL -u "gitlab+deploy-token-4" --password-stdin
-    - docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG .
-    - docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest
-    - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
-    - docker push $REGISTRY_URL/$IMAGE_NAME:latest
-    - docker image prune -f
+    - "echo 'gldt-vqxpX9x6W9x_dmymZEBh' | docker login $REGISTRY_URL -u 'gitlab+deploy-token-4' --password-stdin"
+    - "docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG ."
+    - "docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest"
+    - "docker push $REGISTRY_URL/$IMAGE_NAME:$TAG"
+    - "docker push $REGISTRY_URL/$IMAGE_NAME:latest"
+    - "docker image prune -f"
+
+database_migration:
+  stage: migrate
+  script:
+    - "sudo chown -R gitlab-runner:gitlab-runner ."
+    - |
+      docker run --rm \
+        -v "$(pwd):/app" \
+        -w /app \
+        -e DATABASE_URL="$DATABASE_URL" \
+        node:22-alpine \
+        sh -c "
+          npm install --silent && 
+          npx prisma db push --accept-data-loss
+        "
+  only:
+    - main
+  when: manual
 
 deploy_to_k3s:
   stage: deploy
   script:
-    - kubectl config use-context default
-    - kubectl apply -f k3s-bsp.yaml 
-    - kubectl apply -f service.yaml
+    - "kubectl config use-context default"
+    - "kubectl apply -f k3s-bsp.yaml"
     - |
       kubectl set env deployment/dashboard-bsp \
         CLICKHOUSE_URL="http://192.168.21.31:8123" \
@@ -30,12 +52,13 @@ deploy_to_k3s:
         CLICKHOUSE_USER="admindb" \
         CLICKHOUSE_PASS="bsp123" \
         CLICKHOUSE_PASSWORD="bsp123" \
-        CLICKHOUSE_DB="dbw_bsp_konsolidasi"
-    - kubectl set image deployment/dashboard-bsp dashboard=$REGISTRY_URL/$IMAGE_NAME:$TAG
+        CLICKHOUSE_DB="dbw_bsp_konsolidasi" \
+        DATABASE_URL="$DATABASE_URL"
+    # PERBAIKAN: dashboard-bsp diganti menjadi dashboard sesuai file k3s-bsp.yaml Anda
+    - "kubectl set image deployment/dashboard-bsp dashboard=$REGISTRY_URL/$IMAGE_NAME:$TAG"
   environment:
     name: production
     url: http://192.168.21.10:30011
-    # Bagian on_stop DIHAPUS agar tombol "Stop" hilang
   only:
     - main
   when: manual
