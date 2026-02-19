@@ -15,6 +15,7 @@ variables:
 build_and_push:
   stage: build
   script:
+    - rm -rf .next
     - "echo 'gldt-vqxpX9x6W9x_dmymZEBh' | docker login $REGISTRY_URL -u 'gitlab+deploy-token-4' --password-stdin"
     - "docker build -t $REGISTRY_URL/$IMAGE_NAME:$TAG ."
     - "docker tag $REGISTRY_URL/$IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:latest"

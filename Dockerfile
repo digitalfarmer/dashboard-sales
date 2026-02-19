@@ -41,12 +41,11 @@ ENV PORT=3001
 RUN apk add --no-cache libc6-compat
 RUN npm install -g tsx prisma
 
-# <<<<<<< HEAD
 # 1. Ambil Standalone Next.js
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-# =======
+
 # Copy hasil build standalone
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -54,7 +53,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma 
 
 
-# 2. Ambil SEMUA node_modules dari builder (KUNCI UTAMA)
+# 2. Ambil SEMUA node_modules dari builder 
 # Ini agar sub-dependencies seperti 'postgres-array' tidak hilang
 COPY --from=builder /app/node_modules ./node_modules
 
