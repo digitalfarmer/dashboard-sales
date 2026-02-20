@@ -96,16 +96,16 @@ export default function FilterBar() {
       </div>
 
       {/* Select Cabang */}
-      <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
+      <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
         <MapPin className="w-4 h-4 text-slate-400" />
         <select
          aria-label="Filter cabang"
           onChange={(e) => handleFilterChange("branch", e.target.value)}
           value={searchParams.get("branch") || "ALL"}
-          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-700 outline-none cursor-pointer"
         >
           {options.branches.map((b) => (
-            <option className="text-slate-300 dark:text-slate-800" key={b.kodeCabang} value={b.kodeCabang}>{b.fullName}</option>
+            <option className="text-slate-700 " key={b.kodeCabang} value={b.kodeCabang}>{b.fullName}</option>
           ))}
         </select>
       </div>

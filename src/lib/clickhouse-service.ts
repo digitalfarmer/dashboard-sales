@@ -60,3 +60,63 @@ export async function getSalesMonthlyMetrics(user: any, filters?: { branch?: str
     return []; 
   }
 }
+
+
+// src/lib/clickhouse-service.ts
+
+export async function getPerformanceMetrics(user: any, filters: { branch: string, year: string, category: string }) {
+  const { branch, year, category } = filters;
+  
+  // Jika ALL branch (Nasional), tampilkan nama_cabang
+  // Jika sudah pilih Cabang, tampilkan kolom 'outlet' (isinya Kode + Nama)
+  const targetColumn = branch === 'ALL' ? 'nama_cabang' : 'outlet';
+  
+  const branchFilter = branch !== 'ALL' ? `AND kode_cabang = '${branch}'` : '';
+  const categoryFilter = category !== 'ALL' ? `AND kode_principal = '${category}'` : '';
+
+  const baseQuery = `
+    FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional
+    WHERE fkyear = ${year}
+    ${branchFilter}
+    ${categoryFilter}
+  `;
+
+  // Query Top 5
+  const topQuery = `
+    SELECT 
+        ${targetColumn} as name, 
+        toFloat64(sum(netto)) as total_netto 
+    ${baseQuery} 
+    GROUP BY name 
+    ORDER BY total_netto DESC 
+    LIMIT 5
+  `;
+  
+  // Query Bottom 5
+  const bottomQuery = `
+    SELECT 
+        ${targetColumn} as name, 
+        toFloat64(sum(netto)) as total_netto 
+    ${baseQuery} 
+    GROUP BY name 
+    HAVING total_netto > 0 
+    ORDER BY total_netto ASC 
+    LIMIT 5
+  `;
+
+  try {
+    const [topRes, bottomRes] = await Promise.all([
+      clickhouse.query({ query: topQuery, format: 'JSONEachRow' }).then(res => res.json()),
+      clickhouse.query({ query: bottomQuery, format: 'JSONEachRow' }).then(res => res.json())
+    ]);
+
+    return {
+      top: topRes as any[],
+      bottom: bottomRes as any[],
+      type: branch === 'ALL' ? 'Cabang' : 'Pelanggan'
+    };
+  } catch (error) {
+    console.error("Performance Metrics Error:", error);
+    return { top: [], bottom: [], type: '' };
+  }
+}

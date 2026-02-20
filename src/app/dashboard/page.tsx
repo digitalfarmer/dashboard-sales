@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getSalesMonthlyMetrics } from '@/lib/clickhouse-service';
+import { getPerformanceMetrics, getSalesMonthlyMetrics } from '@/lib/clickhouse-service';
 import ChartSales from '@/components/sales/ChartSales';
 import FilterBar from "@/components/dashboard/FilterBar";
 import { Suspense } from 'react';
@@ -68,11 +68,17 @@ export default async function DashboardPage({
   const totalQty = salesData.reduce((acc, curr) => acc + (curr.total_qty || 0), 0);
   const hasData = salesData && salesData.length > 0;
 
+  const performance = await getPerformanceMetrics(user, {
+  branch: selectedBranch,
+  year: selectedYear,
+  category: selectedCategory
+});
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       
       {/* FILTER AREA */}
-      <Suspense fallback={<div className="h-20 bg-slate-100 animate-pulse rounded-[2rem] mb-8" />}>
+      <Suspense fallback={<div className="h-20 bg-slate-100 animate-pulse rounded-3xl mb-8" />}>
         <FilterBar />
       </Suspense>
 
@@ -84,7 +90,7 @@ export default async function DashboardPage({
             <span>Analytics Real-time</span>
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight dark:text-slate-200">
-            Executive <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">Dashboard</span>
+            Executive <span className="text-indigo-600">Dashboard</span>
           </h1>
           
           <div className="flex flex-wrap items-center gap-3 mt-3">
@@ -115,7 +121,7 @@ export default async function DashboardPage({
 
       {/* MAIN CONTENT */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 shadow-sm">
           <h3 className="font-bold text-slate-800 mb-6 px-2 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-500" />
             Growth Analysis {selectedYear}
@@ -123,12 +129,12 @@ export default async function DashboardPage({
           <ChartSales data={salesData} />
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
           <h3 className="font-bold text-slate-800 mb-6 flex items-center justify-between">
             Breakdown Bulanan
             <ArrowRight className="w-4 h-4 text-slate-400" />
           </h3>
-          <div className="space-y-4 overflow-y-auto max-h-[400px] pr-2">
+          <div className="space-y-4 overflow-y-auto max-h-96 pr-2">
             {salesData.map((item, idx) => (
               <div key={`${item.fkmonth}-${idx}`} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100 group">
                 <div>
@@ -145,6 +151,62 @@ export default async function DashboardPage({
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+  {/* TOP 5 SECTION */}
+  <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+    <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
+      <div className="p-2 bg-emerald-500 rounded-lg">
+        <TrendingUp className="w-4 h-4 text-white" />
+      </div>
+      Top 5 {performance.type} Terbesar
+    </h3>
+    <div className="space-y-4">
+      {performance.top.map((item, idx) => (
+        <div key={`top-${idx}`} className="group">
+          <div className="flex justify-between mb-1 items-center">
+            <span className="text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[200px]">{item.name}</span>
+            <span className="text-sm font-black text-emerald-600">Rp {(item.total_netto / 1e6).toFixed(1)}jt</span>
+          </div>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div 
+              className="bg-emerald-500 h-full rounded-full transition-all duration-1000" 
+              style={{ width: `${(item.total_netto / (performance.top[0]?.total_netto || 1)) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* BOTTOM 5 SECTION */}
+  <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+    <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
+      <div className="p-2 bg-rose-500 rounded-lg">
+        <TrendingUp className="w-4 h-4 text-white rotate-180" />
+      </div>
+      Bottom 5 {performance.type} Terkecil
+    </h3>
+    <div className="space-y-4">
+      {performance.bottom.map((item, idx) => (
+        <div key={`bottom-${idx}`} className="group">
+          <div className="flex justify-between mb-1 items-center">
+            <span className="text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[200px]">{item.name}</span>
+            <span className="text-sm font-black text-rose-600">Rp {(item.total_netto / 1e6).toFixed(1)}jt</span>
+          </div>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div 
+              className="bg-rose-500 h-full rounded-full transition-all duration-1000" 
+              style={{ width: `${(item.total_netto / (performance.top[0]?.total_netto || 1)) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+      
     </div>
   );
 }
