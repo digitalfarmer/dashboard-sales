@@ -3,6 +3,7 @@
 /* 1. Aktifkan fitur Dark Mode di Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+
 @theme {
   /* Font setting (biar tetep pake font bawaan Next.js) */
   --font-sans: var(--font-geist-sans);
@@ -36,5 +37,6 @@ body {
 @layer base {
   * {
     @apply border-slate-200 dark:border-slate-800;
+    /* @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50; */
   }
 }

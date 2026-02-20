@@ -74,53 +74,54 @@ export default function FilterBar() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-4 p-5 bg-white/80 backdrop-blur-md rounded-[2rem] border border-slate-200 shadow-sm mb-8">
-      <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
+    <div className="flex flex-wrap items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm mb-8 transition-all">
+      <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold uppercase tracking-wider">
         <Filter className="w-3 h-3" />
         {/* <span>Quick Filters</span> */}
       </div>
       {/* Select Tahun */}
-      <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 focus-within:ring-2 ring-blue-500/20">
+      <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
         <Calendar className="w-4 h-4 text-slate-400" />
         <select
           aria-label="Filter Tahun"
           onChange={(e) => handleFilterChange("year", e.target.value)}
           value={searchParams.get("year") || new Date().getFullYear().toString()}
-          className="bg-transparent text-sm font-bold text-slate-700 outline-none"
+          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 outline-none"
+
         >
           {options.years.map((y) => (
-            <option key={y} value={y}>{y}</option>
+            <option className="text-slate-700 dark:text-slate-800" key={y} value={y}>{y}</option>
           ))}
         </select>
       </div>
 
       {/* Select Cabang */}
-      <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-2xl border border-slate-100 focus-within:ring-2 ring-blue-500/20 transition-all">
+      <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
         <MapPin className="w-4 h-4 text-slate-400" />
         <select
          aria-label="Filter cabang"
           onChange={(e) => handleFilterChange("branch", e.target.value)}
           value={searchParams.get("branch") || "ALL"}
-          className="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer"
+          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
         >
           {options.branches.map((b) => (
-            <option key={b.kodeCabang} value={b.kodeCabang}>{b.fullName}</option>
+            <option className="text-slate-300 dark:text-slate-800" key={b.kodeCabang} value={b.kodeCabang}>{b.fullName}</option>
           ))}
         </select>
       </div>
 
       {/* Dropdown Principal - DISESUAIKAN DENGAN NAMA KOLOM API */}
-      <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 focus-within:ring-2 ring-blue-500/20 transition-all">
+      <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
         <Tag className="w-4 h-4 text-slate-400" />
         <select
           aria-label="Filter kategori"
           onChange={(e) => handleFilterChange("category", e.target.value)}
           value={searchParams.get("category") || "ALL"}
-          className="bg-transparent text-sm font-bold text-slate-700 outline-none min-w-[150px]"
+          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 outline-none min-w-[150px]"
         >
-          <option value="ALL">Semua Principal</option>
+          <option className="text-slate-700 " value="ALL">Semua Principal</option>
           {options.categories.map((c: any) => (
-  <option key={c.kode_principal} value={c.kode_principal}>
+  <option className="dark:text-slate-800" key={c.kode_principal} value={c.kode_principal}>
     {c.nama_principal || c.kode_principal}
   </option>
 ))}
