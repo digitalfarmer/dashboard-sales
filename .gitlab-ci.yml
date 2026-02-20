@@ -60,7 +60,7 @@ deploy_to_k3s:
     - "kubectl rollout restart deployment/dashboard-bsp" 
   environment:
     name: production
-    url: http://192.168.21.10:30011
+    url: http://192.168.21.10:30081
   only:
     - main
   when: manual
