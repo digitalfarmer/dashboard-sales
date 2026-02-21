@@ -8,6 +8,12 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 3001  # Harus 3001 sesuai log aplikasi Anda
+      targetPort: 3001 # Harus 3001 sesuai log aplikasi Anda
       nodePort: 30081
   type: NodePort
+  value: |
+  additionalArguments:
+    - "--entrypoints.websecure.http.tls.options=default@internal"
+    # Force HTTPS
+    - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+    - "--entrypoints.web.http.redirections.entryPoint.scheme=https"

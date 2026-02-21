@@ -8,7 +8,8 @@ import {
   Users,
   Settings,
   ChevronRight,
-  MapIcon
+  MapIcon,
+  Grid2x2Plus
 } from 'lucide-react';
 
 const menus = [
@@ -17,6 +18,7 @@ const menus = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Customers', href: '/dashboard/customers', icon: Users },
   { name: 'Maps', href: '/dashboard/maps', icon: MapIcon },
+  { name: 'Pivot', href: '/dashboard/pivot', icon: Grid2x2Plus },
 ];
 
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
