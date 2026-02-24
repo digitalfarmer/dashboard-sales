@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getBranchMonthlyMatrix, getBranchPerformanceMetrics, getPerformanceMetrics, getSalesMonthlyMetrics } from '@/lib/clickhouse-service';
+import {  getBranchMapMetrics, getBranchPerformanceMetrics, getPerformanceMetrics, getSalesMonthlyMetrics } from '@/lib/clickhouse-service';
 import BranchTrendLineChart from "@/components/dashboard/BranchTrendLineChart";
 import ChartSales from '@/components/sales/ChartSales';
 import FilterBar from "@/components/dashboard/FilterBar";
@@ -10,7 +10,10 @@ import {
   Wallet, Truck, MapPin, TrendingUp, Calendar, ArrowRight, CalendarDays
 } from 'lucide-react';
 import { clickhouse } from '@/lib/clickhouse';
-import BranchHorizontalChart from '@/components/dashboard/BranchHorizontalChart';
+
+//import BranchMapChart from '@/components/dashboard/BranchMapChart';
+import MapWrapper from '@/components/dashboard/MapWrapper';
+
 
 interface SalesData {
   fkmonth: string;
@@ -70,7 +73,7 @@ export default async function DashboardPage({
   const totalQty = salesData.reduce((acc, curr) => acc + (curr.total_qty || 0), 0);
   const hasData = salesData && salesData.length > 0;
   // Ambil data matrix dari ClickHouse
-  const trendData = await getBranchPerformanceMetrics({
+  const { chartData, branchMap } = await getBranchPerformanceMetrics({
     branch: selectedBranch,
     year: selectedYear,
     category: selectedCategory
@@ -81,6 +84,13 @@ export default async function DashboardPage({
     year: selectedYear,
     category: selectedCategory
   });
+
+  // Ambil data map dari ClickHouse
+const mapData = await getBranchMapMetrics({
+  branch: selectedBranch,
+  year: selectedYear,
+  category: selectedCategory
+});
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -219,9 +229,15 @@ export default async function DashboardPage({
 
         <BranchTrendLineChart
           key={`${selectedYear}-${selectedBranch}-${selectedCategory}`}
-          data={trendData} />
+          data={chartData}
+          branchMap={branchMap}
+        />
       </section>
+{/* coponents maps */}
+<section className="mt-10 pb-10">
 
+      <MapWrapper data={mapData} userBranch={user?.kodeCabang || 'ALL'} />
+    </section>
 
     </div>
   );

@@ -7,6 +7,7 @@ export async function getSalesMonthlyMetrics(user: any, filters?: { branch?: str
   const categoryFilter = filters?.category || 'ALL';
   const yearFilter = filters?.year || new Date().getFullYear().toString(); // Default tahun berjalan
 
+
   // 2. Susun Query sesuai spek Masbro
   // Query ini jauh lebih enteng karena tidak pakai JOIN ke tabel master yang berat
   let query = `
@@ -115,47 +116,6 @@ export async function getPerformanceMetrics(user: any, filters: { branch: string
     return { top: [], bottom: [], type: '' };
   }
 }
-//buat query omset cabang per bulan
-export async function getBranchMonthlyMatrix(year: string) {
-  const query = `
-    SELECT 
-        nama_cabang,
-        fkmonth,
-        toFloat64(SUM(gross)) as total_gross
-    FROM (
-        SELECT f.fkmonth, f.gross, c.nama_cabang
-        FROM dbw_bsp_konsolidasi.dw_tr_sp_faktur AS f
-        ANY LEFT JOIN dbw_bsp_konsolidasi.dw_ms_cabang AS c ON f.kode_cabang = c.kode_cabang
-        WHERE f.fkyear = ${year} AND f.flagsales = 'FAKTUR'
-    )
-    GROUP BY nama_cabang, fkmonth
-    ORDER BY nama_cabang ASC, fkmonth ASC
-  `;
-
-  try {
-    const rawData = await clickhouse.query({ query, format: 'JSONEachRow' }).then(res => res.json()) as any[];
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-
-    // Group by Cabang
-    const pivoted = rawData.reduce((acc: any[], curr) => {
-      let branchObj = acc.find(item => item.cabang === curr.nama_cabang);
-      if (!branchObj) {
-        branchObj = { cabang: curr.nama_cabang, totalAll: 0 };
-        acc.push(branchObj);
-      }
-      const monthLabel = monthNames[curr.fkmonth - 1];
-      branchObj[monthLabel] = curr.total_gross;
-      branchObj.totalAll += curr.total_gross; // Untuk sorting nanti
-      return acc;
-    }, []);
-
-    // Sort biar cabang paling cuan ada di paling atas
-    return pivoted.sort((a, b) => b.totalAll - a.totalAll);
-  } catch (error) {
-    console.error("Matrix Error:", error);
-    return [];
-  }
-}
 
 
 export async function getBranchPerformanceMetrics(filters: { branch: string, year: string, category: string }) {
@@ -193,26 +153,68 @@ export async function getBranchPerformanceMetrics(filters: { branch: string, yea
   try {
     const resultSet = await clickhouse.query({ query, format: 'JSONEachRow' });
     const rawData = await resultSet.json() as any[];
-
+    
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
     const pivotedData = monthNames.map(name => ({ month: name }));
+    
+    // Objek untuk simpan mapping Kode -> Nama
+    const branchMap: Record<string, string> = {};
 
-    if (rawData.length > 0) {
-      rawData.forEach(curr => {
-        const monthIndex = curr.fkmonth - 1;
-        if (monthIndex >= 0 && monthIndex < 12) {
-          // SEBELUMNYA: const label = `${curr.display_name} (${curr.kode_cabang})`;
-          // SEKARANG: Cukup kode_cabang saja
-          const label = curr.kode_cabang;
-          pivotedData[monthIndex][label] = curr.total_gross;
-        }
-      });
-    }
+    rawData.forEach(curr => {
+      const monthIndex = curr.fkmonth - 1;
+      if (monthIndex >= 0 && monthIndex < 12) {
+        const kode = curr.kode_cabang;
+        const nama = curr.display_name;
+        
+        pivotedData[monthIndex][kode] = curr.total_gross;
+        branchMap[kode] = nama; // Simpan mapping-nya
+      }
+    });
 
-    return pivotedData;
+    return { chartData: pivotedData, branchMap };
   } catch (error) {
     // Log error asli ClickHouse agar kita tahu kolom mana yang bermasalah lagi
     console.error("CLICKHOUSE ERROR DETAIL:", error);
+    return [];
+  }
+}
+
+// Fungsi baru untuk data peta (Map)
+// src/lib/clickhouse-service.ts
+// src/lib/clickhouse-service.ts
+export async function getBranchMapMetrics(filters: { branch: string, year: string, category: string }) {
+  const { branch, year, category } = filters;
+  const selectedYear = year || '2026';
+
+  let query = `
+    SELECT 
+        v.kode_cabang as kode_cabang,
+        c.nama_cabang as nama_cabang,
+        -- Ambil koordinat dari master cabang dan cast ke Float
+        toFloat64OrZero(c.geo_latitude) as latitude,
+        toFloat64OrZero(c.geo_longitude) as longitude,
+        toFloat64(SUM(v.gross)) as total_gross,
+        toFloat64(SUM(v.netto)) as total_netto
+    FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional AS v
+    LEFT JOIN dbw_bsp_konsolidasi.dw_ms_cabang AS c ON v.kode_cabang = c.kode_cabang
+    WHERE v.fkyear = ${selectedYear}
+  `;
+
+  if (branch && branch !== 'ALL') query += ` AND v.kode_cabang = '${branch}'`;
+  if (category && category !== 'ALL') query += ` AND v.kode_principal = '${category}'`;
+
+  query += ` 
+    GROUP BY kode_cabang, nama_cabang, latitude, longitude 
+    HAVING latitude != 0 
+    ORDER BY total_netto DESC
+  `;
+
+  try {
+    const resultSet = await clickhouse.query({ query, format: 'JSONEachRow' });
+    const data = await resultSet.json();
+    return data as any[];
+  } catch (error) {
+    console.error("MAP JOIN ERROR:", error);
     return [];
   }
 }
