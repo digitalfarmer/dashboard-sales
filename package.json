@@ -27,6 +27,7 @@
     "react-leaflet": "^5.0.0",
     "react-webdatarocks": "^1.4.9",
     "recharts": "^3.7.0",
+    "systeminformation": "^5.23.0",
     "webdatarocks": "^1.4.9"
   },
   "devDependencies": {
