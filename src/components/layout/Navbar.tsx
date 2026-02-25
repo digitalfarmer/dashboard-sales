@@ -21,8 +21,10 @@ export default function Navbar({ user, toggleSidebar }: { user: any; toggleSideb
         
         {/* KIRI */}
         <div className="flex items-center gap-4 lg:flex-1">
-          <button 
+          <button
+            type="button"
             onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
             className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <Menu className="size-5" />
@@ -52,14 +54,20 @@ export default function Navbar({ user, toggleSidebar }: { user: any; toggleSideb
 
         {/* KANAN */}
         <div className="flex items-center gap-2 lg:flex-1 lg:justify-end">
-          <button 
+          <button
+            type="button"
             onClick={() => setIsDark(!isDark)}
+            aria-label="Toggle dark mode"
             className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
           >
             {isDark ? <Sun className="size-5 text-amber-500" /> : <Moon className="size-5" />}
           </button>
 
-          <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative">
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative"
+          >
             <Bell className="size-5" />
             <span className="absolute top-2 right-2.5 size-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900"></span>
           </button>
@@ -80,7 +88,10 @@ export default function Navbar({ user, toggleSidebar }: { user: any; toggleSideb
                   <p className="text-[10px] text-slate-500">{user?.role}</p>
                 </div>
                 <form action={logout}>
-                  <button className="w-full flex items-center gap-2 p-2 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl font-semibold transition-colors">
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-2 p-2 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl font-semibold transition-colors"
+                  >
                     <LogOut className="size-4" /> Keluar
                   </button>
                 </form>

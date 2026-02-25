@@ -1,21 +1,23 @@
-
-import { cookies } from 'next/headers';
 import DashboardContainer from '@/components/layout/DashboardContainer';
-import { SessionProvider } from "next-auth/react";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../api/auth/[...nextauth]/route';
+import { redirect } from 'next/navigation';
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const session = cookieStore.get('session');
+  const session = await getServerSession(authOptions);
   
-  // Data user diambil sekali di sini
-  const user = session ? JSON.parse(session.value) : { fullName: 'User', role: 'GUEST', kodeCabang: '' };
+  if (!session?.user) {
+    redirect('/login');
+  }
+  
+  const user = session.user as any;
 
   return (
     <DashboardContainer user={user}>
-      
       {children}
     </DashboardContainer>
   );

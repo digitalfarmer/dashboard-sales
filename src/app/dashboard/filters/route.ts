@@ -36,7 +36,7 @@ export async function GET() {
     // 3. Generate List Tahun
     const currentYear = new Date().getFullYear();
     const years = [];
-    for (let y = currentYear; y >= 2006; y--) { // Saya batasi sampai 2024 biar gak kepanjangan
+    for (let y = currentYear; y >= 2007; y--) { // Saya batasi sampai 2024 biar gak kepanjangan
       years.push(y.toString());
     }
 

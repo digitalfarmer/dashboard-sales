@@ -1,21 +1,25 @@
-"use client";
-import React, { useState } from 'react';
-import Sidebar from '@/components/layout/Sidebar'; // Sesuaikan path-nya
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import DashboardContainer from '@/components/layout/DashboardContainer';
+import { getServerSession } from 'next-auth';
 
-export default function PivotLayout({ children }: { children: React.ReactNode }) {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+import { redirect } from 'next/navigation';
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect('/login');
+  }
+  
+  const user = session.user as any;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Sidebar tetap di kiri */}
-      <Sidebar isOpen={isSidebarOpen} />
-      
-      {/* Konten utama di kanan */}
-      <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
-        <div className="p-4 md:p-8">
-          {children}
-        </div>
-      </main>
-    </div>
+    <DashboardContainer user={user}>
+      {children}
+    </DashboardContainer>
   );
 }
