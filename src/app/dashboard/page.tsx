@@ -1,19 +1,25 @@
-import { cookies } from 'next/headers';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from 'next/navigation';
-import {  getBranchMapMetrics, getBranchPerformanceMetrics, getPerformanceMetrics, getSalesMonthlyMetrics } from '@/lib/clickhouse-service';
+import { 
+  getBranchMapMetrics, 
+  getBranchPerformanceMetrics, 
+  getPerformanceMetrics,
+  getSalesMonthlyMetrics 
+} from '@/lib/clickhouse-service';
+import { clickhouse } from '@/lib/clickhouse';
+
+// Components
 import BranchTrendLineChart from "@/components/dashboard/BranchTrendLineChart";
 import ChartSales from '@/components/sales/ChartSales';
 import FilterBar from "@/components/dashboard/FilterBar";
+import MapWrapper from '@/components/dashboard/MapWrapper';
 import { Suspense } from 'react';
 
+// Icons
 import {
   Wallet, Truck, MapPin, TrendingUp, Calendar, ArrowRight, CalendarDays
 } from 'lucide-react';
-import { clickhouse } from '@/lib/clickhouse';
-
-//import BranchMapChart from '@/components/dashboard/BranchMapChart';
-import MapWrapper from '@/components/dashboard/MapWrapper';
-
 
 interface SalesData {
   fkmonth: string;
@@ -27,20 +33,33 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // 1. Validasi Session
-  const cookieStore = await cookies();
-  const session = cookieStore.get('session');
-  if (!session) redirect('/login');
+  // 1. VALIDASI SESSION (NextAuth)
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect('/login');
+  }
 
-  const user = JSON.parse(session.value);
-  const currentYear = new Date().getFullYear().toString(); // "2026"
-  // 2. Await searchParams (Sesuai Next.js 15)
+  const user = session.user as any;
+  //const currentYear = "2026"; // Hardcoded sesuai database kamu atau pakai new Date().getFullYear()
+
+  // 2. AWAIT SEARCH PARAMS (Standard Next.js 15)
   const filtersFromUrl = await searchParams;
-  const selectedBranch = (filtersFromUrl.branch as string) || user.kodeCabang;
-  const selectedCategory = (filtersFromUrl.category as string) || 'ALL';
-  const selectedYear = (filtersFromUrl.year as string) || currentYear;
+  
+  /**
+   * LOGIC PROTEKSI CABANG:
+   * Jika user login bukan PUSAT (kodeCabang !== 'ALL'), 
+   * maka paksa selectedBranch selalu ke kode cabangnya sendiri.
+   */
+  const defaultYear = "2026";
+  const selectedBranch = user.kodeCabang === 'ALL' 
+    ? (filtersFromUrl.branch as string || 'ALL') 
+    : user.kodeCabang;
 
-  // 3. Ambil Nama Cabang & Data Sales secara Paralel (Biar Cepat)
+  const selectedCategory = (filtersFromUrl.category as string) || 'ALL';
+  const selectedYear = (filtersFromUrl.year as string) || defaultYear;
+
+  // 3. AMBIL DATA SECARA PARALEL
   let salesData: SalesData[] = [];
   let displayBranchName = selectedBranch === 'ALL' ? 'Seluruh Cabang (Nasional)' : selectedBranch;
 
@@ -53,9 +72,9 @@ export default async function DashboardPage({
       }),
       selectedBranch !== 'ALL'
         ? clickhouse.query({
-          query: `SELECT nama_cabang FROM dbw_bsp_konsolidasi.dw_ms_cabang WHERE kode_cabang = '${selectedBranch}' LIMIT 1`,
-          format: 'JSONEachRow'
-        }).then(res => res.json()) as Promise<any[]>
+            query: `SELECT nama_cabang FROM dbw_bsp_konsolidasi.dw_ms_cabang WHERE kode_cabang = '${selectedBranch}' LIMIT 1`,
+            format: 'JSONEachRow'
+          }).then(res => res.json()) as Promise<any[]>
         : Promise.resolve([])
     ]);
 
@@ -64,20 +83,24 @@ export default async function DashboardPage({
       displayBranchName = branchMeta[0].nama_cabang;
     }
   } catch (error) {
-    console.error("Dashboard Data Error:", error);
+    console.error("Dashboard ClickHouse Error:", error);
   }
 
-  // 4. Kalkulasi Stats
-  const totalNetto = salesData.reduce((acc, curr) => acc + (curr.total_netto_bersih || 0), 0);
-  const totalFaktur = salesData.reduce((acc, curr) => acc + (curr.total_faktur || 0), 0);
-  const totalQty = salesData.reduce((acc, curr) => acc + (curr.total_qty || 0), 0);
+  // 4. KALKULASI STATS
+  const totalNetto = salesData.reduce((acc, curr) => acc + (Number(curr.total_netto_bersih) || 0), 0);
+  const totalFaktur = salesData.reduce((acc, curr) => acc + (Number(curr.total_faktur) || 0), 0);
+  const totalQty = salesData.reduce((acc, curr) => acc + (Number(curr.total_qty) || 0), 0);
   const hasData = salesData && salesData.length > 0;
-  // Ambil data matrix dari ClickHouse
-  const { chartData, branchMap } = await getBranchPerformanceMetrics({
+
+  // 5. AMBIL METRICS LAINNYA
+  const branchPerformance = await getBranchPerformanceMetrics({
     branch: selectedBranch,
     year: selectedYear,
     category: selectedCategory
   });
+  
+  const chartData = Array.isArray(branchPerformance) ? [] : branchPerformance.chartData;
+  const branchMap = Array.isArray(branchPerformance) ? {} : branchPerformance.branchMap;
 
   const performance = await getPerformanceMetrics(user, {
     branch: selectedBranch,
@@ -85,12 +108,11 @@ export default async function DashboardPage({
     category: selectedCategory
   });
 
-  // Ambil data map dari ClickHouse
-const mapData = await getBranchMapMetrics({
-  branch: selectedBranch,
-  year: selectedYear,
-  category: selectedCategory
-});
+  const mapData = await getBranchMapMetrics({
+    branch: selectedBranch,
+    year: selectedYear,
+    category: selectedCategory
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -112,20 +134,20 @@ const mapData = await getBranchMapMetrics({
           </h1>
 
           <div className="flex flex-wrap items-center gap-3 mt-3">
-            {/* Badge Cabang */}
             <div className="flex items-center dark:bg-slate-800 gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-sm shadow-sm">
               <MapPin className="w-4 h-4 text-rose-500" />
               <span className="font-bold text-slate-700 dark:text-slate-200">{displayBranchName}</span>
             </div>
 
-            {/* Badge Tahun */}
             <div className="flex items-center gap-2 dark:bg-slate-800 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-sm shadow-sm">
               <CalendarDays className="w-4 h-4 text-blue-500" />
               <span className="font-bold text-slate-700 dark:text-slate-300">Tahun {selectedYear}</span>
             </div>
 
             <span className="text-slate-300 hidden md:block">|</span>
-            <span className="text-sm italic text-slate-500 dark:text-slate-400">User: {user.fullName}</span>
+            <span className="text-sm italic text-slate-500 dark:text-slate-400">
+              User: {user.name} ({user.role})
+            </span>
           </div>
         </div>
       </header>
@@ -133,14 +155,14 @@ const mapData = await getBranchMapMetrics({
       {/* STATS AREA */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard title="Netto Sales" value={totalNetto} icon={<Wallet />} color="emerald" isCurrency />
-        <StatCard title="Gross Sales" value={totalFaktur} icon={<Truck />} color="blue" isCurrency />
+        <StatCard title="Total Faktur" value={totalFaktur} icon={<Truck />} color="blue" />
         <StatCard title="Total Volume" value={totalQty} icon={<Calendar />} color="orange" unit="Pcs" />
       </div>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN CONTENT: CHART & BREAKDOWN */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="font-bold text-slate-800 mb-6 px-2 flex items-center gap-2">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 px-2 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-500" />
             Growth Analysis {selectedYear}
           </h3>
@@ -148,7 +170,7 @@ const mapData = await getBranchMapMetrics({
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <h3 className="font-bold text-slate-800 mb-6 flex items-center justify-between">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center justify-between">
             Breakdown Bulanan
             <ArrowRight className="w-4 h-4 text-slate-400" />
           </h3>
@@ -157,11 +179,11 @@ const mapData = await getBranchMapMetrics({
               <div key={`${item.fkmonth}-${idx}`} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100 group">
                 <div>
                   <p className="text-xs font-bold text-slate-400 uppercase">{item.fkmonth}</p>
-                  <p className="font-bold text-slate-700 dark:text-slate-300">Rp {(item.total_netto_bersih / 1e6).toFixed(1)}jt</p>
+                  <p className="font-bold text-slate-700 dark:text-slate-300">Rp {(Number(item.total_netto_bersih) / 1e6).toFixed(1)}jt</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-slate-400 uppercase">Qty</p>
-                  <p className="text-sm font-semibold text-blue-600">{item.total_qty.toLocaleString('id-ID')}</p>
+                  <p className="text-sm font-semibold text-blue-600">{Number(item.total_qty).toLocaleString('id-ID')}</p>
                 </div>
               </div>
             ))}
@@ -170,8 +192,9 @@ const mapData = await getBranchMapMetrics({
         </div>
       </div>
 
+      {/* TOP/BOTTOM PERFORMANCE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-        {/* TOP 5 SECTION */}
+        {/* TOP 5 */}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
             <div className="p-2 bg-emerald-500 rounded-lg">
@@ -184,12 +207,12 @@ const mapData = await getBranchMapMetrics({
               <div key={`top-${idx}`} className="group">
                 <div className="flex justify-between mb-1 items-center">
                   <span className="text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[200px]">{item.name}</span>
-                  <span className="text-sm font-black text-emerald-600">Rp {(item.total_netto / 1e6).toFixed(1)}jt</span>
+                  <span className="text-sm font-black text-emerald-600">Rp {(Number(item.total_netto) / 1e6).toFixed(1)}jt</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-emerald-500 h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${(item.total_netto / (performance.top[0]?.total_netto || 1)) * 100}%` }}
+                    style={{ width: `${(Number(item.total_netto) / (Number(performance.top[0]?.total_netto) || 1)) * 100}%` }}
                   />
                 </div>
               </div>
@@ -197,7 +220,7 @@ const mapData = await getBranchMapMetrics({
           </div>
         </div>
 
-        {/* BOTTOM 5 SECTION */}
+        {/* BOTTOM 5 */}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
             <div className="p-2 bg-rose-500 rounded-lg">
@@ -210,40 +233,38 @@ const mapData = await getBranchMapMetrics({
               <div key={`bottom-${idx}`} className="group">
                 <div className="flex justify-between mb-1 items-center">
                   <span className="text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[200px]">{item.name}</span>
-                  <span className="text-sm font-black text-rose-600">Rp {(item.total_netto / 1e6).toFixed(1)}jt</span>
+                  <span className="text-sm font-black text-rose-600">Rp {(Number(item.total_netto) / 1e6).toFixed(1)}jt</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-rose-500 h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${(item.total_netto / (performance.top[0]?.total_netto || 1)) * 100}%` }}
+                    style={{ width: `${(Number(item.total_netto) / (Number(performance.top[0]?.total_netto) || 1)) * 100}%` }}
                   />
                 </div>
               </div>
             ))}
           </div>
         </div>
-
       </div>
-      {/* Chart Baru Kita */}
-      <section className="mt-8">
 
+      {/* BRANCH TREND CHART */}
+      <section className="mt-8">
         <BranchTrendLineChart
           key={`${selectedYear}-${selectedBranch}-${selectedCategory}`}
           data={chartData}
           branchMap={branchMap}
         />
       </section>
-{/* coponents maps */}
-<section className="mt-10 pb-10">
 
-      <MapWrapper data={mapData} userBranch={user?.kodeCabang || 'ALL'} />
-    </section>
+      {/* MAPS AREA */}
+      <section className="mt-10 pb-10">
+        <MapWrapper data={mapData} userBranch={user.kodeCabang} />
+      </section>
 
     </div>
   );
 }
 
-// Sub-komponen StatCard supaya kode di atas tidak terlalu panjang
 function StatCard({ title, value, icon, color, isCurrency, unit }: any) {
   const colors: any = {
     emerald: "bg-emerald-50 text-emerald-600",
@@ -260,7 +281,7 @@ function StatCard({ title, value, icon, color, isCurrency, unit }: any) {
       </div>
       <p className="text-slate-500 text-sm font-medium">{title}</p>
       <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-        {isCurrency ? `Rp ${value.toLocaleString('id-ID')}` : `${value.toLocaleString('id-ID')} ${unit || ''}`}
+        {isCurrency ? `Rp ${Number(value).toLocaleString('id-ID')}` : `${Number(value).toLocaleString('id-ID')} ${unit || ''}`}
       </h3>
     </div>
   );

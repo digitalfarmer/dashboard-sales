@@ -13,7 +13,9 @@ export async function GET() {
     
     const queryDivisi = `
       SELECT DISTINCT kode_divisi_produk 
-      FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional WHERE fkyear = 2024
+      FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional 
+      WHERE fkyear = 2024
+      ORDER BY kode_divisi_produk
       LIMIT 100
     `;
 

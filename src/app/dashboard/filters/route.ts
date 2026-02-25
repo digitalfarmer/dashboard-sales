@@ -1,60 +1,51 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
-import { cookies } from 'next/headers';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session');
+    // 1. Ambil session NextAuth (Gantiin Cookies manual)
+    const session = await getServerSession(authOptions);
 
-    if (!sessionCookie) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = JSON.parse(sessionCookie.value);
+    const user = session.user as any;
     const { role, kodeCabang } = user;
 
-    // 1. Query Cabang - Kita ambil dari ClickHouse untuk SIAPAPUN yang login
+    // 2. Query Cabang
     let branchQuery = "";
-    if (role === 'SUPER_ADMIN') {
-      branchQuery = `SELECT kode_cabang, nama_cabang FROM dbw_bsp_konsolidasi.dw_ms_cabang ORDER BY nama_cabang ASC`;
+    // Sesuaikan role dengan enum di Postgres kamu (misal: 'ADMIN' atau 'SUPER_ADMIN')
+    if (kodeCabang === 'ALL' || role === 'ADMIN') {
+      branchQuery = `SELECT kode_cabang, nama_cabang FROM dbw_bsp_konsolidasi.dw_ms_cabang  ORDER BY nama_cabang ASC`;
     } else {
-      // Walaupun cuma satu cabang, kita tetep tanya ClickHouse biar dapet NAMA_CABANG-nya
       branchQuery = `SELECT kode_cabang, nama_cabang FROM dbw_bsp_konsolidasi.dw_ms_cabang WHERE kode_cabang = '${kodeCabang}' LIMIT 1`;
     }
 
-     const [branchesRaw, principalQuery] = await Promise.all([
-      clickhouse.query({ query: branchQuery, format: 'JSONEachRow' }).then(res => res.json()),
+    const [branchesRaw, principalRaw] = await Promise.all([
+      clickhouse.query({ query: branchQuery, format: 'JSONEachRow' }).then(res => res.json()) as Promise<any[]>,
       clickhouse.query({ 
         query: `SELECT DISTINCT Kode_Principal as kode_principal, Nama_Principal as nama_principal 
                 FROM dbw_bsp_konsolidasi.dw_ms_principal ORDER BY nama_principal ASC`, 
         format: 'JSONEachRow' 
-      }).then(res => res.json())
+      }).then(res => res.json()) as Promise<any[]>
     ]);
 
-    // 3. Format Data Cabang
-    // Pastikan kita mapping key-nya agar sesuai dengan yang diharapkan FilterBar (kodeCabang & fullName)
-    // 2. Format Data Cabang
-    let finalBranches = (branchesRaw as any[]).map(b => ({
-      kodeCabang: b.kode_cabang,
-      fullName: b.nama_cabang || b.kode_cabang // Kalau nama_cabang null, baru pake kode
-    }));
-
-    if (role === 'SUPER_ADMIN') {
-      finalBranches.unshift({ kodeCabang: 'ALL', fullName: 'Semua Cabang' });
-    }
-
-    // 4. Generate List Tahun (2007 - Tahun Berjalan)
+    // 3. Generate List Tahun
     const currentYear = new Date().getFullYear();
     const years = [];
-    for (let y = currentYear; y >= 2007; y--) {
+    for (let y = currentYear; y >= 2006; y--) { // Saya batasi sampai 2024 biar gak kepanjangan
       years.push(y.toString());
     }
 
+    // 4. Return Data (SESUAIKAN KEY-NYA DENGAN FILTERBAR)
+    // Di FilterBar.tsx kamu panggil data.cabang, data.divisi, data.tahun
     return NextResponse.json({
-      branches: finalBranches,
-      categories: principalQuery,
-      years: years,
+      cabang: branchesRaw, // FilterBar nunggu 'cabang'
+      divisi: principalRaw, // FilterBar nunggu 'divisi'
+      tahun: years,         // FilterBar nunggu 'tahun'
       defaultYear: currentYear.toString()
     });
 

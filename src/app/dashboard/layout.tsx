@@ -1,6 +1,7 @@
+
 import { cookies } from 'next/headers';
 import DashboardContainer from '@/components/layout/DashboardContainer';
-
+import { SessionProvider } from "next-auth/react";
 export default async function DashboardLayout({
   children,
 }: {
@@ -14,6 +15,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardContainer user={user}>
+      
       {children}
     </DashboardContainer>
   );
