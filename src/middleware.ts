@@ -1,6 +1,17 @@
-export { default } from "next-auth/middleware";
+import { withAuth } from "next-auth/middleware";
 
-export const config = { 
-  // Rute mana saja yang harus login?
-  matcher: ["/dashboard/:path*", "/pivot/:path*"] 
+// Kita bungkus secara eksplisit ke dalam fungsi default
+export default withAuth({
+  pages: {
+    signIn: "/login",
+  },
+});
+
+export const config = {
+  // Lindungi semua route di dashboard dan pivot
+  matcher: [
+    "/dashboard/:path*", 
+    "/pivot/:path*",
+    "/api/protected/:path*"
+  ],
 };
