@@ -45,6 +45,8 @@ deploy_to_k3s:
   stage: deploy
   script:
     - "kubectl config use-context default"
+    - sed -i "s|\${NEXTAUTH_SECRET}|$NEXTAUTH_SECRET|g" k3s-bsp.yaml
+    - sed -i "s|\${NEXTAUTH_URL}|$NEXTAUTH_URL|g" k3s-bsp.yaml
     - "kubectl apply -f k3s-bsp.yaml"
     - |
       kubectl set env deployment/dashboard-bsp \

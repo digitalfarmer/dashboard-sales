@@ -23,6 +23,10 @@ spec:
           env:
             - name: DATABASE_URL
               value: "postgresql://postgres:postgres@192.168.21.182:5423/dashboard_sales?schema=public"
+            - name: NEXTAUTH_SECRET
+              value: "${NEXTAUTH_SECRET}"
+            - name: NEXTAUTH_URL
+              value: "${NEXTAUTH_URL}"
 ---
 apiVersion: v1
 kind: Service
