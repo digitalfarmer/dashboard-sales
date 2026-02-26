@@ -17,6 +17,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 # ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
 # ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+RUN rm -rf .next
 
 RUN npm install pg @prisma/adapter-pg && \
     npm install --save-dev @types/pg && \
