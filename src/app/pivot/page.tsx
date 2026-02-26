@@ -30,8 +30,8 @@ async function getPivotData(filters: { branch: string; category: string; year: s
           nama_cabang,
           kode_principal,
           fkmonth,
-          sum(toFloat64(gross)) as total_gross,
-          sum(toFloat64(netto)) as total_netto
+          sum(gross) as total_gross,
+          sum(netto) as total_netto
       FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional
       WHERE ${whereClause}
       GROUP BY nama_cabang, kode_principal, fkmonth

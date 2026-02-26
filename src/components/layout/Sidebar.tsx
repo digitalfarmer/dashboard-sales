@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation'; // Tambah useRouter
 import {
   LayoutDashboard,
   BarChart3,
@@ -23,6 +23,7 @@ const menus = [
 
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
   const pathname = usePathname();
+  const router = useRouter(); // Inisialisasi router
 
   return (
     <aside 
@@ -48,6 +49,13 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                 <Link
                   key={menu.href}
                   href={menu.href}
+                  // REVISI: Tambahkan onClick untuk force refresh data server
+                  onClick={(e) => {
+                    if (pathname === menu.href) {
+                      e.preventDefault(); // Jangan navigasi kalau sudah di halaman yang sama
+                    }
+                    router.refresh(); // Ambil data baru dari server (ClickHouse)
+                  }}
                   className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${
                     isActive
                       ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'

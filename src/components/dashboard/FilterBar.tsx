@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { startTransition, useEffect, useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react"; // 1. Tambahkan session
 import { MapPin, Tag, Filter, Calendar, RefreshCcw } from "lucide-react"; // Fix typo lucide-react jika ada
+import { useTransition } from "react"; // Tambahkan ini untuk indikator loading
 
 export default function FilterBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession(); // 2. Ambil data user login
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition(); // Hook untuk mantau proses pindah halaman
 
   const user = session?.user as any;
 
@@ -66,13 +69,13 @@ export default function FilterBar() {
       params.delete("category");
     }
 
-    // ---------------------------
-
-    router.push(`?${params.toString()}`);
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+      router.refresh();
+    });
   };
 
   const resetAll = () => {
-    // Balik ke dashboard tanpa parameter, tapi biarkan NextAuth yang handle redirect
     router.push('/dashboard');
   };
 
@@ -86,6 +89,13 @@ export default function FilterBar() {
   }
 
   return (
+    <div className={`relative ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
+      {/* Tampilkan Loading Spinner kecil kalau isPending true */}
+      {isPending && (
+        <div className="absolute -top-6 right-4 text-xs text-indigo-500 animate-pulse font-bold">
+          Updating data...
+        </div>
+      )}
     <div className="flex flex-wrap items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm mb-8 transition-all">
       <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold uppercase tracking-wider">
         <Filter className="w-3 h-3" />
@@ -166,6 +176,7 @@ export default function FilterBar() {
           Clear
         </button>
       )}
+    </div>
     </div>
   );
 }
