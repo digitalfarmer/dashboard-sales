@@ -20,6 +20,7 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 
 RUN npm install pg @prisma/adapter-pg && \
     npm install --save-dev @types/pg && \
+    npm install bcrypt && \
     npx prisma generate
 
 
