@@ -11,12 +11,12 @@ export default function DashboardContainer({
   user: any 
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  useEffect(() => {
-  // Jika layar lebar (Desktop), otomatis buka
-  if (window.innerWidth >= 1024) {
-    setSidebarOpen(true);
-  }
-}, []);
+//   useEffect(() => {
+//   // Jika layar lebar (Desktop), otomatis buka
+//   if (window.innerWidth >= 1024) {
+//     setSidebarOpen(true);
+//   }
+// }, []);
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
