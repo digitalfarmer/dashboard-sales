@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -21,26 +22,20 @@ export default async function PivotPage({
   const filters = await searchParams; // Pastikan di-await
 
   const selectedBranch = user.kodeCabang !== 'ALL' ? user.kodeCabang : (filters.branch || 'ALL');
-  const selectedYear = filters.year || new Date().getFullYear().toString();
+  const selectedYear = filters.year || '2026';
   const selectedCategory = filters.category || 'ALL';
 
-  
+  console.log('Pivot Page Filters:', { selectedBranch, selectedYear, selectedCategory });
+
   const data = await getPivotData({
     branch: selectedBranch,
     category: selectedCategory,
     year: selectedYear
   });
 
-  const FilterSkeleton = () => (
-  <div className="flex gap-4 p-4 bg-white rounded-3xl animate-pulse">
-    <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
-    <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
-  </div>
-);
-
-  const cacheKey = JSON.stringify(filters);
+  const pivotKey = `${selectedBranch}-${selectedYear}-${selectedCategory}-${Date.now()}`;
   return (
-    <div key={cacheKey} className="space-y-6">
+    <div className="space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center px-2">
         <div>
@@ -60,14 +55,19 @@ export default async function PivotPage({
       </div>
 
       {/* Filter Bar */}
-      <Suspense key={cacheKey} fallback={<FilterSkeleton />}>
+      <Suspense fallback={
+        <div className="flex gap-4 p-4 bg-white rounded-3xl animate-pulse">
+          <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
+          <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
+        </div>
+      }>
         <FilterBar />
       </Suspense>
 
       {/* Main Content Area */}
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
         {data && data.length > 0 ? (
-          <PivotClient data={data} />
+          <PivotClient key={pivotKey} data={data} dataKey={pivotKey} />
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <div>Loading data...</div>

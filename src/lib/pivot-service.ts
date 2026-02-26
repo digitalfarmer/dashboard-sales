@@ -5,7 +5,6 @@ export async function getPivotData(filters: { branch: string; category: string; 
   try {
     const { branch, category, year } = filters;
 
-    // 1. Build Query dinamis berdasarkan Filter
     let whereConditions = [`fkyear = ${year}`];
 
     if (branch !== 'ALL') {

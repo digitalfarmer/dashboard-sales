@@ -76,7 +76,8 @@ export default function FilterBar() {
   };
 
   const resetAll = () => {
-    router.push('/dashboard');
+    const basePath = pathname.includes('pivot') ? '/pivot' : '/dashboard';
+    router.push(basePath);
   };
 
   if (loading) {
