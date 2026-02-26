@@ -26,7 +26,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
   const router = useRouter(); // Inisialisasi router
 
   return (
-    <aside 
+    <aside
       className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen transition-all duration-300 ease-in-out overflow-hidden
         ${isOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-0'}
       `}
@@ -49,18 +49,17 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                 <Link
                   key={menu.href}
                   href={menu.href}
-                  // REVISI: Tambahkan onClick untuk force refresh data server
-                  onClick={(e) => {
-                    if (pathname === menu.href) {
-                      e.preventDefault(); // Jangan navigasi kalau sudah di halaman yang sama
-                    }
-                    router.refresh(); // Ambil data baru dari server (ClickHouse)
+
+                  onClick={() => {
+
+                    setTimeout(() => {
+                      router.refresh();
+                    }, 100);
                   }}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${
-                    isActive
-                      ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${isActive
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <menu.icon className={`size-5 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />

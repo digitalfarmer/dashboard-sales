@@ -4,47 +4,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from 'next/navigation';
 import PivotClient from '@/components/pivot/PivotClient';
-import { clickhouse } from '@/lib/clickhouse';
 import FilterBar from "@/components/dashboard/FilterBar";
 import { Suspense } from 'react';
 
-// Fungsi fetch data yang sekarang menerima parameter filter
-async function getPivotData(filters: { branch: string; category: string; year: string }) {
-  try {
-    const { branch, category, year } = filters;
-
-    // 1. Build Query dinamis berdasarkan Filter
-    let whereConditions = [`fkyear = ${year}`];
-
-    if (branch !== 'ALL') {
-      whereConditions.push(`kode_cabang = '${branch}'`);
-    }
-    if (category !== 'ALL') {
-      whereConditions.push(`kode_principal = '${category}'`);
-    }
-
-    const whereClause = whereConditions.join(' AND ');
-
-    const query = `
-      SELECT 
-          nama_cabang,
-          kode_principal,
-          fkmonth,
-          sum(gross) as total_gross,
-          sum(netto) as total_netto
-      FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional
-      WHERE ${whereClause}
-      GROUP BY nama_cabang, kode_principal, fkmonth
-      ORDER BY nama_cabang ASC
-    `;
-    console.log("RUNNING QUERY:", query); // <--- LIHAT DI TERMINAL VSCODE KAMU
-    const resultSet = await clickhouse.query({ query, format: 'JSONEachRow' });
-    return await resultSet.json();
-  } catch (error: any) {
-    console.error("Pivot Fetch Error:", error.message);
-    return [];
-  }
-}
+import { getPivotData } from '@/lib/pivot-service';
 
 export default async function PivotPage({
   searchParams,
@@ -57,32 +20,27 @@ export default async function PivotPage({
   const user = session.user as any;
   const filters = await searchParams; // Pastikan di-await
 
-  // --- LOGIC PENENTUAN CABANG ---
-  let selectedBranch = 'ALL';
-
-  if (user.kodeCabang !== 'ALL') {
-    // Jika user punya cabang spesifik, pakai kodenya dia
-    selectedBranch = user.kodeCabang;
-  } else {
-    // Jika user PUSAT/SUPER_ADMIN, ambil dari URL ?branch=...
-    // Kita kasih fallback 'ALL' kalau filters.branch nilainya null/undefined
-    selectedBranch = filters.branch || 'ALL';
-  }
-//get currentyear
-  const currentYear = new Date().getFullYear().toString();
-  const selectedYear = filters.year || currentYear; // Pakai tahun saat ini jika tidak ada filter
+  const selectedBranch = user.kodeCabang !== 'ALL' ? user.kodeCabang : (filters.branch || 'ALL');
+  const selectedYear = filters.year || new Date().getFullYear().toString();
   const selectedCategory = filters.category || 'ALL';
 
-  // Debugging di Terminal VSCode
-  console.log("DEBUG FILTERS:", { selectedBranch, selectedYear, selectedCategory });
-
+  
   const data = await getPivotData({
     branch: selectedBranch,
     category: selectedCategory,
     year: selectedYear
   });
+
+  const FilterSkeleton = () => (
+  <div className="flex gap-4 p-4 bg-white rounded-3xl animate-pulse">
+    <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
+    <div className="h-10 w-32 bg-slate-200 rounded-lg"></div>
+  </div>
+);
+
+  const cacheKey = JSON.stringify(filters);
   return (
-    <div className="space-y-6">
+    <div key={cacheKey} className="space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center px-2">
         <div>
@@ -102,7 +60,7 @@ export default async function PivotPage({
       </div>
 
       {/* Filter Bar */}
-      <Suspense fallback={<div className="h-16 animate-pulse bg-slate-100 rounded-full" />}>
+      <Suspense key={cacheKey} fallback={<FilterSkeleton />}>
         <FilterBar />
       </Suspense>
 
@@ -112,6 +70,7 @@ export default async function PivotPage({
           <PivotClient data={data} />
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+            <div>Loading data...</div>
             <p className="text-lg font-medium">Tidak ada data untuk filter ini</p>
             <p className="text-sm">Coba pilih tahun atau cabang lain.</p>
           </div>
