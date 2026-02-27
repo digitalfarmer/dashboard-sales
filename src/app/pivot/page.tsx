@@ -10,6 +10,21 @@ import { Suspense } from 'react';
 
 import { getPivotData } from '@/lib/pivot-service';
 
+async function PivotDataLoader({ filters }: { filters: any }) {
+  const data = await getPivotData(filters);
+  const pivotKey = `${filters.branch}-${filters.year}-${filters.category}-${Date.now()}`;
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+        <p className="text-lg font-medium">Tidak ada data untuk filter ini</p>
+        <p className="text-sm">Coba pilih tahun atau cabang lain.</p>
+      </div>
+    );
+  }
+  return <PivotClient key={pivotKey} data={data} dataKey={pivotKey} />;
+}
+
 export default async function PivotPage({
   searchParams,
 }: {
@@ -27,11 +42,17 @@ export default async function PivotPage({
 
   console.log('Pivot Page Filters:', { selectedBranch, selectedYear, selectedCategory });
 
-  const data = await getPivotData({
+  // const data = await getPivotData({
+  //   branch: selectedBranch,
+  //   category: selectedCategory,
+  //   year: selectedYear
+  // });
+  const filterParams = {
     branch: selectedBranch,
-    category: selectedCategory,
-    year: selectedYear
-  });
+    year: selectedYear,
+    category: selectedCategory
+  };
+
 
   const pivotKey = `${selectedBranch}-${selectedYear}-${selectedCategory}-${Date.now()}`;
   return (
@@ -46,7 +67,7 @@ export default async function PivotPage({
             {selectedBranch} — {selectedYear}
           </p>
         </div>
-        
+
         {/* Indikator Tahun Aktif */}
         <div className="bg-white dark:bg-slate-900 px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
           <span className="text-xs font-bold text-slate-400">Data Year: </span>
@@ -64,17 +85,35 @@ export default async function PivotPage({
         <FilterBar />
       </Suspense>
 
-      {/* Main Content Area */}
+      {/* Main Content Area - Bagian yang "Menunggu" Data */}
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-        {data && data.length > 0 ? (
-          <PivotClient key={pivotKey} data={data} dataKey={pivotKey} />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <div>Loading data...</div>
-            <p className="text-lg font-medium">Tidak ada data untuk filter ini</p>
-            <p className="text-sm">Coba pilih tahun atau cabang lain.</p>
-          </div>
-        )}
+        <Suspense
+          key={JSON.stringify(filterParams)} // Penting: Biar loading muncul tiap filter ganti
+          fallback={
+            <div className="flex flex-col items-center justify-center py-20">
+              {/* Container Spinner */}
+              <div className="relative size-16 mb-6">
+                {/* Ring Dasar (Mati) */}
+                <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-800 rounded-full"></div>
+
+                {/* Ring Aktif (Berputar) - Menggunakan Warna Brand Indigo */}
+                <div className="absolute inset-0 border-4 border-transparent border-t-indigo-600 border-l-indigo-600 rounded-full animate-spin"></div>
+              </div>
+
+              {/* Teks Loading yang Selaras */}
+              <div className="text-center space-y-1">
+                <p className="text-lg font-black text-slate-800 dark:text-white tracking-tight italic uppercase">
+                  Processing <span className="text-indigo-600">Data</span>
+                </p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] animate-pulse">
+                  Connecting to ClickHouse
+                </p>
+              </div>
+            </div>
+          }
+        >
+          <PivotDataLoader filters={filterParams} />
+        </Suspense>
       </div>
     </div>
   );

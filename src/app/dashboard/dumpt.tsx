@@ -1,57 +1,32 @@
-export const dynamic = 'force-dynamic';
+// Di src/app/pivot/page.tsx, bagian fallback Suspense:
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { redirect } from 'next/navigation';
-import PivotClient from '@/components/pivot/PivotClient';
-import FilterBar from "@/components/dashboard/FilterBar";
-import { Suspense } from 'react';
-
-// IMPORT SERVICE DISINI
-import { getPivotData } from '@/lib/pivot-service';
-
-export default async function PivotPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | undefined }>;
-}) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) redirect('/login');
-
-  const user = session.user as any;
-  const filters = await searchParams;
-
-  const selectedBranch = user.kodeCabang !== 'ALL' ? user.kodeCabang : (filters.branch || 'ALL');
-  const selectedYear = filters.year || new Date().getFullYear().toString();
-  const selectedCategory = filters.category || 'ALL';
-
-  // Panggil fungsi dari service
-  const data = await getPivotData({
-    branch: selectedBranch,
-    category: selectedCategory,
-    year: selectedYear
-  });
-
-  const cacheKey = JSON.stringify(filters);
-
-  return (
-    <div key={cacheKey} className="space-y-6">
-      {/* HEADER & FILTER BAR TETAP SAMA */}
-      <div className="flex justify-between items-center px-2">
-        <h1 className="text-2xl font-black italic">PIVOT <span className="text-indigo-600">SALES</span></h1>
+<Suspense 
+  key={JSON.stringify(filterParams)} 
+  fallback={
+    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+      
+      {/* --- INI SPINNER BARUNYA --- */}
+      <div className="size-16 relative mb-6">
+        {/* Layer 1: Background Circle (Slate) */}
+        <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-800 rounded-full"></div>
+        
+        {/* Layer 2: Animated Gradient Ring */}
+        <div className="absolute inset-0 border-t-4 border-l-4 border-transparent rounded-full animate-multi-spin"
+             style={{
+               borderTopColor: '#4f46e5', // Indigo-600
+               borderLeftColor: '#f59e0b', // Amber-500 (Buat efek ganti warna saat muter)
+               filter: 'drop-shadow(0 0 4px #4f46e5)' // Efek Glow/Neon kecil
+             }}
+        ></div>
       </div>
+      {/* ----------------------------- */}
 
-      <Suspense fallback={<div className="h-16 animate-pulse bg-slate-100 rounded-full" />}>
-        <FilterBar />
-      </Suspense>
-
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
-        {data && data.length > 0 ? (
-          <PivotClient data={data} />
-        ) : (
-          <div className="py-20 text-center text-slate-400">Data tidak ditemukan.</div>
-        )}
-      </div>
+      <p className="font-bold text-slate-600 dark:text-slate-300 animate-pulse tracking-tight text-lg">
+        Menyiapkan <span className="text-indigo-600">Pivot Sales</span>
+      </p>
+      <p className="text-sm text-slate-500 animate-pulse">Menghubungkan ke server ClickHouse...</p>
     </div>
-  );
-}
+  }
+>
+  <PivotDataLoader filters={filterParams} />
+</Suspense>
