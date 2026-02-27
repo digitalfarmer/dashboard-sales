@@ -1,25 +1,25 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useSession } from "next-auth/react"; // 1. Tambahkan session
-import { MapPin, Tag, Filter, Calendar, RefreshCcw } from "lucide-react"; // Fix typo lucide-react jika ada
-import { useTransition } from "react"; // Tambahkan ini untuk indikator loading
+import { useSession } from "next-auth/react";
+import { MapPin, Tag, Filter, Calendar, RefreshCcw } from "lucide-react";
+import Select from 'react-select'; // Import react-select
 
 export default function FilterBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession(); // 2. Ambil data user login
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition(); // Hook untuk mantau proses pindah halaman
+  const [isPending, startTransition] = useTransition();
 
   const user = session?.user as any;
 
   const [options, setOptions] = useState<{
-    branches: any[],
-    categories: any[],
-    years: string[]
+    branches: { value: string; label: string }[],
+    categories: { value: string; label: string }[],
+    years: { value: string; label: string }[]
   }>({
     branches: [],
     categories: [],
@@ -33,10 +33,17 @@ export default function FilterBar() {
         const res = await fetch("/dashboard/filters");
         const data = await res.json();
         if (!data.error) {
+          // Mapping data ke format React-Select
           setOptions({
-            branches: data.cabang || [],
-            categories: data.divisi || [],
-            years: data.tahun || []
+            branches: [
+              { value: 'ALL', label: 'Nasional' },
+              ...(data.cabang || []).map((b: any) => ({ value: b.kode_cabang, label: b.nama_cabang }))
+            ],
+            categories: [
+              { value: 'ALL', label: 'Semua Divisi' },
+              ...(data.divisi || []).map((c: any) => ({ value: c.kode_principal, label: c.nama_principal }))
+            ],
+            years: (data.tahun || []).map((y: string) => ({ value: y, label: y }))
           });
         }
       } catch (err) {
@@ -48,7 +55,8 @@ export default function FilterBar() {
     fetchFilters();
   }, []);
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: string, selectedOption: any) => {
+    const value = selectedOption?.value;
     const params = new URLSearchParams(searchParams.toString());
 
     if (value && value !== "ALL") {
@@ -57,15 +65,7 @@ export default function FilterBar() {
       params.delete(key);
     }
 
-    // --- LOGIC REVISI DISINI ---
-
-    // 1. Jika ganti TAHUN, reset Kategori (tapi Cabang biarkan tetap)
-    if (key === "year") {
-      params.delete("category");
-    }
-
-    // 2. Jika ganti CABANG, reset Kategori juga (karena divisi tiap cabang bisa beda)
-    if (key === "branch") {
+    if (key === "year" || key === "branch") {
       params.delete("category");
     }
 
@@ -80,10 +80,45 @@ export default function FilterBar() {
     router.push(basePath);
   };
 
+  // Custom Styles untuk menyesuaikan dengan Identity Tailwind/Indigo kamu
+  const customSelectStyles = {
+    control: (base: any) => ({
+      ...base,
+      backgroundColor: 'transparent',
+      border: 'none',
+      boxShadow: 'none',
+      minHeight: '32px',
+      cursor: 'pointer',
+    }),
+    valueContainer: (base: any) => ({ ...base, padding: '0 4px' }),
+    input: (base: any) => ({ ...base, color: '#475569' }), // slate-600
+    singleValue: (base: any) => ({ 
+      ...base, 
+      color: '#1e293b', // slate-800
+      fontWeight: '700',
+      fontSize: '14px'
+    }),
+    option: (base: any, state: any) => ({
+      ...base,
+      backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#f5f3ff' : 'white',
+      color: state.isSelected ? 'white' : '#475569',
+      fontSize: '13px',
+      fontWeight: '600',
+      cursor: 'pointer',
+    }),
+    menu: (base: any) => ({
+      ...base,
+      borderRadius: '16px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+      border: '1px solid #f1f5f9'
+    })
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-20 bg-white/50 backdrop-blur-md rounded-[2rem] border border-slate-200 mb-8 animate-pulse">
-        <RefreshCcw className="w-5 h-5 text-blue-500 animate-spin mr-2" />
+        <RefreshCcw className="w-5 h-5 text-indigo-500 animate-spin mr-2" />
         <span className="text-sm font-medium text-slate-500">Menyiapkan Filter...</span>
       </div>
     );
@@ -91,93 +126,77 @@ export default function FilterBar() {
 
   return (
     <div className={`relative ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
-      {/* Tampilkan Loading Spinner kecil kalau isPending true */}
       {isPending && (
-        <div className="absolute -top-6 right-4 text-xs text-indigo-500 animate-pulse font-bold">
-          Updating data...
+        <div className="absolute -top-6 right-4 text-xs text-indigo-500 animate-pulse font-bold uppercase tracking-tighter">
+          Updating Data...
         </div>
       )}
-    <div className="flex flex-wrap items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm mb-8 transition-all">
-      <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold uppercase tracking-wider">
-        <Filter className="w-3 h-3" />
-      </div>
 
-      {/* FILTER TAHUN */}
-      <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
-        <Calendar className="w-4 h-4 text-slate-400" />
-        <select
-          aria-label="Filter Tahun"
-          onChange={(e) => handleFilterChange("year", e.target.value)}
-          // Jika di URL tidak ada year, tampilkan 2026
-          value={searchParams.get("year") || "2026"}
-          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 outline-none"
-        >
-          {options.years.map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-      </div>
+      <div className="flex flex-wrap items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm mb-8 transition-all">
+        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-xs font-bold uppercase tracking-wider">
+          <Filter className="w-3 h-3" />
+        </div>
 
-      {/* FILTER CABANG: Hanya muncul jika user PUSAT (ALL) */}
-      {user?.kodeCabang === "ALL" ? (
-        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
-          <MapPin className="w-4 h-4 text-slate-400" />
-          <select
-            aria-label="Filter cabang"
-            onChange={(e) => handleFilterChange("branch", e.target.value)}
-            value={searchParams.get("branch") || "ALL"}
-            className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+        {/* SELECT TAHUN */}
+        <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[120px]">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <Select
+            styles={customSelectStyles}
+            options={options.years}
+            value={options.years.find(y => y.value === (searchParams.get("year") || "2026"))}
+            onChange={(opt) => handleFilterChange("year", opt)}
+            isSearchable={false} // Tahun biasanya dikit, ga perlu search
+            className="flex-1"
+          />
+        </div>
+
+        {/* SELECT CABANG */}
+        {user?.kodeCabang === "ALL" ? (
+          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[220px]">
+            <MapPin className="w-4 h-4 text-slate-400" />
+            <Select
+              styles={customSelectStyles}
+              options={options.branches}
+              value={options.branches.find(b => b.value === (searchParams.get("branch") || "ALL"))}
+              onChange={(opt) => handleFilterChange("branch", opt)}
+              isSearchable={true}
+              placeholder="Cari Cabang..."
+              className="flex-1"
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 opacity-80">
+            <MapPin className="w-4 h-4 text-indigo-500" />
+            <span className="text-sm font-bold text-slate-500">Cabang: {user?.kodeCabang}</span>
+          </div>
+        )}
+
+        {/* SELECT KATEGORI */}
+        <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[250px]">
+          <Tag className="w-4 h-4 text-slate-400" />
+          <Select
+            styles={customSelectStyles}
+            options={options.categories}
+            value={options.categories.find(c => c.value === (searchParams.get("category") || "ALL"))}
+            onChange={(opt) => handleFilterChange("category", opt)}
+            isSearchable={true}
+            placeholder="Cari Divisi..."
+            className="flex-1"
+          />
+        </div>
+
+        {/* RESET */}
+        {(searchParams.get("branch") || searchParams.get("category") || searchParams.get("year")) && (
+          <button
+            type="button"
+            onClick={resetAll}
+            className="ml-auto text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 px-3 py-2 hover:bg-rose-50 rounded-xl transition-all"
           >
-            <option value="ALL">Nasional</option>
-            {options.branches.map((b) => (
-              <option key={b.kode_cabang} value={b.kode_cabang}>{b.nama_cabang}</option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        // Jika user Cabang, tampilkan text saja (tidak bisa diubah)
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 opacity-80">
-          <MapPin className="w-4 h-4 text-blue-500" />
-          <span className="text-sm font-bold text-slate-500 tracking-tight">
-            Cabang: {user?.kodeCabang}
-          </span>
-        </div>
-      )}
-
-      {/* FILTER KATEGORI */}
-      <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 focus-within:ring-2 ring-blue-500/20 transition-all">
-        <Tag className="w-4 h-4 text-slate-400" />
-        <select
-          aria-label="Filter kategori"
-          onChange={(e) => handleFilterChange("category", e.target.value)}
-          value={searchParams.get("category") || "ALL"}
-          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 outline-none min-w-[150px]"
-        >
-          <option value="ALL">Semua Divisi</option>
-          {options.categories.map((c: any, idx: number) => (
-            /* Gunakan kombinasi kode dan index biar benar-benar unik */
-            <option
-              key={c.kode_principal ? `principal-${c.kode_principal}` : `idx-${idx}`}
-              value={c.kode_principal || ""}
-            >
-              {c.nama_principal || "Tanpa Nama"}
-            </option>
-          ))}
-        </select>
+            <RefreshCcw className="w-3 h-3" />
+            Clear
+          </button>
+        )}
       </div>
-
-      {/* RESET BUTTON */}
-      {(searchParams.get("branch") || searchParams.get("category") || searchParams.get("year")) && (
-        <button
-          type="button"
-          onClick={resetAll}
-          className="ml-auto text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 px-3 py-2 hover:bg-rose-50 rounded-xl transition-all"
-        >
-          <RefreshCcw className="w-3 h-3" />
-          Clear
-        </button>
-      )}
-    </div>
     </div>
   );
 }

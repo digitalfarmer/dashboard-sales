@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-// <<<<<<< HEAD
+
   eslint: {
     ignoreDuringBuilds: true,
   },
-// =======
+
   output: 'standalone',
   typescript: {
     // !! PERINGATAN !!

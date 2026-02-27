@@ -1,32 +1,76 @@
-// Di src/app/pivot/page.tsx, bagian fallback Suspense:
+"use client";
+import React from 'react';
+import Select from 'react-select';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useTransition } from 'react';
 
-<Suspense 
-  key={JSON.stringify(filterParams)} 
-  fallback={
-    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+// Contoh data options (nanti bisa kamu sesuaikan dari data API)
+const branchOptions = [
+  { value: 'ALL', label: 'SEMUA CABANG' },
+  { value: 'C001', label: 'JAKARTA - PUSAT' },
+  { value: 'C002', label: 'BANDUNG - JAWA BARAT' },
+  // ... data lainnya
+];
+
+export default function FilterBar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+
+  const handleFilterChange = (key: string, selectedOption: any) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const value = selectedOption?.value || 'ALL';
+
+    if (value && value !== 'ALL') {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  // Styling Kustom biar cocok dengan tema Indigo & Rounded
+  const customStyles = {
+    control: (base: any) => ({
+      ...base,
+      borderRadius: '12px',
+      padding: '2px',
+      borderColor: '#e2e8f0', // slate-200
+      '&:hover': { borderColor: '#4f46e5' }, // indigo-600
+      boxShadow: 'none',
+    }),
+    option: (base: any, state: any) => ({
+      ...base,
+      backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#f5f3ff' : 'white',
+      color: state.isSelected ? 'white' : '#1e293b',
+      fontSize: '14px',
+      fontWeight: '500',
+    }),
+  };
+
+  return (
+    <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm ${isPending ? 'opacity-50' : ''}`}>
       
-      {/* --- INI SPINNER BARUNYA --- */}
-      <div className="size-16 relative mb-6">
-        {/* Layer 1: Background Circle (Slate) */}
-        <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-800 rounded-full"></div>
-        
-        {/* Layer 2: Animated Gradient Ring */}
-        <div className="absolute inset-0 border-t-4 border-l-4 border-transparent rounded-full animate-multi-spin"
-             style={{
-               borderTopColor: '#4f46e5', // Indigo-600
-               borderLeftColor: '#f59e0b', // Amber-500 (Buat efek ganti warna saat muter)
-               filter: 'drop-shadow(0 0 4px #4f46e5)' // Efek Glow/Neon kecil
-             }}
-        ></div>
+      {/* Searchable Branch Select */}
+      <div className="space-y-1.5">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Branch</label>
+        <Select
+          instanceId="branch-select"
+          options={branchOptions}
+          styles={customStyles}
+          placeholder="Cari Cabang..."
+          onChange={(opt) => handleFilterChange('branch', opt)}
+          defaultValue={branchOptions[0]}
+          isSearchable={true}
+        />
       </div>
-      {/* ----------------------------- */}
 
-      <p className="font-bold text-slate-600 dark:text-slate-300 animate-pulse tracking-tight text-lg">
-        Menyiapkan <span className="text-indigo-600">Pivot Sales</span>
-      </p>
-      <p className="text-sm text-slate-500 animate-pulse">Menghubungkan ke server ClickHouse...</p>
+      {/* Tambahkan Select lainnya untuk Year & Category dengan cara yang sama */}
+      
     </div>
-  }
->
-  <PivotDataLoader filters={filterParams} />
-</Suspense>
+  );
+}
