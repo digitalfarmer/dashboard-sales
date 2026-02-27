@@ -42,11 +42,6 @@ export default async function PivotPage({
 
   console.log('Pivot Page Filters:', { selectedBranch, selectedYear, selectedCategory });
 
-  // const data = await getPivotData({
-  //   branch: selectedBranch,
-  //   category: selectedCategory,
-  //   year: selectedYear
-  // });
   const filterParams = {
     branch: selectedBranch,
     year: selectedYear,
@@ -54,7 +49,6 @@ export default async function PivotPage({
   };
 
 
-  const pivotKey = `${selectedBranch}-${selectedYear}-${selectedCategory}-${Date.now()}`;
   return (
     <div className="space-y-6">
       {/* Header Section */}
