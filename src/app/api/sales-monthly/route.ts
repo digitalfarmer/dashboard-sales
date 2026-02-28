@@ -12,8 +12,16 @@ export async function GET(request: Request) {
   const tahun = searchParams.get('tahun') || '2025';
 
   let whereClause = `WHERE fkyear = ${tahun}`;
-  if (cabang && cabang !== 'all') whereClause += ` AND kode_cabang = '${cabang}'`;
-  if (divisi && divisi !== 'all') whereClause += ` AND kode_divisi_produk = '${divisi}'`;
+  
+  if (cabang && cabang !== 'all') {
+    const cabangList = cabang.split(',').map(c => `'${c}'`).join(',');
+    whereClause += ` AND kode_cabang IN (${cabangList})`;
+  }
+  
+  if (divisi && divisi !== 'all') {
+    const divisiList = divisi.split(',').map(d => `'${d}'`).join(',');
+    whereClause += ` AND kode_divisi_produk IN (${divisiList})`;
+  }
 
   try {
     

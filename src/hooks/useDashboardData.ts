@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export function useDashboardData(selectedTahun: string, selectedCabang: string, selectedDivisi: string) {
+export function useDashboardData(selectedTahun: string, selectedCabang: string[], selectedDivisi: string[]) {
     const [data, setData] = useState<any[]>([]);
     const [topProducts, setTopProducts] = useState<any[]>([]);
     const [mapData, setMapData] = useState<any[]>([]);
@@ -14,7 +14,11 @@ export function useDashboardData(selectedTahun: string, selectedCabang: string, 
             // setError(null); // Opsional: jangan reset error pas auto-refresh biar gak kedap-kedip
 
             try {
-                const queryParams = `cabang=${selectedCabang}&divisi=${selectedDivisi}&tahun=${selectedTahun}`;
+                const cabangParam = selectedCabang.length > 0 ? selectedCabang.join(',') : 'all';
+                const divisiParam = selectedDivisi.length > 0 ? selectedDivisi.join(',') : 'all';
+                const queryParams = `cabang=${cabangParam}&divisi=${divisiParam}&tahun=${selectedTahun}`;
+                
+                console.log('Fetching with params:', { cabangParam, divisiParam, selectedTahun });
 
                 const [salesRes, topRes, mapRes] = await Promise.all([
                     fetch(`/api/sales-monthly?${queryParams}`),

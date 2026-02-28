@@ -2,10 +2,11 @@
 import { clickhouse } from './clickhouse';
 
 export async function getSalesMonthlyMetrics(user: any, filters?: { branch?: string, category?: string, year?: string }) {
-  // 1. Ambil nilai filter dari URL atau default ke user session
   const branchFilter = filters?.branch || user.kodeCabang;
   const categoryFilter = filters?.category || 'ALL';
-  const yearFilter = filters?.year || new Date().getFullYear().toString(); // Default tahun berjalan
+  const yearFilter = filters?.year || new Date().getFullYear().toString();
+
+  console.log('getSalesMonthlyMetrics called with:', { branchFilter, categoryFilter, yearFilter });
 
 
   // 2. Susun Query sesuai spek Masbro
@@ -37,8 +38,14 @@ export async function getSalesMonthlyMetrics(user: any, filters?: { branch?: str
 `;
 
   // Filter sekarang aman karena kode_principal sudah ada di subquery
-  if (branchFilter !== 'ALL') query += ` AND kode_cabang = '${branchFilter}'`;
-  if (categoryFilter !== 'ALL') query += ` AND kode_principal = '${categoryFilter}'`;
+  if (branchFilter !== 'ALL') {
+    const branches = branchFilter.split(',').map(b => `'${b.trim()}'`).join(',');
+    query += ` AND kode_cabang IN (${branches})`;
+  }
+  if (categoryFilter !== 'ALL') {
+    const categories = categoryFilter.split(',').map(c => `'${c.trim()}'`).join(',');
+    query += ` AND kode_principal IN (${categories})`;
+  }
 
   query += ` GROUP BY fkmonth ORDER BY fkmonth ASC`;
 
@@ -67,8 +74,12 @@ export async function getPerformanceMetrics(user: any, filters: { branch: string
   // Jika sudah pilih Cabang, tampilkan kolom 'outlet' (isinya Kode + Nama)
   const targetColumn = branch === 'ALL' ? 'nama_cabang' : 'outlet';
 
-  const branchFilter = branch !== 'ALL' ? `AND kode_cabang = '${branch}'` : '';
-  const categoryFilter = category !== 'ALL' ? `AND kode_principal = '${category}'` : '';
+  const branchFilter = branch !== 'ALL' 
+    ? `AND kode_cabang IN (${branch.split(',').map(b => `'${b.trim()}'`).join(',')})` 
+    : '';
+  const categoryFilter = category !== 'ALL' 
+    ? `AND kode_principal IN (${category.split(',').map(c => `'${c.trim()}'`).join(',')})` 
+    : '';
 
   const baseQuery = `
     FROM dbw_bsp_konsolidasi.dw_vw_pivot_faktur_retur_nasional
@@ -145,8 +156,14 @@ export async function getBranchPerformanceMetrics(filters: { branch: string, yea
     WHERE 1=1
   `;
 
-  if (branch && branch !== 'ALL') query += ` AND kode_cabang = '${branch}'`;
-  if (category && category !== 'ALL') query += ` AND kode_principal = '${category}'`;
+  if (branch && branch !== 'ALL') {
+    const branches = branch.split(',').map(b => `'${b.trim()}'`).join(',');
+    query += ` AND kode_cabang IN (${branches})`;
+  }
+  if (category && category !== 'ALL') {
+    const categories = category.split(',').map(c => `'${c.trim()}'`).join(',');
+    query += ` AND kode_principal IN (${categories})`;
+  }
 
   query += ` GROUP BY fkmonth, display_name, kode_cabang ORDER BY fkmonth ASC`;
 
@@ -200,8 +217,14 @@ export async function getBranchMapMetrics(filters: { branch: string, year: strin
     WHERE v.fkyear = ${selectedYear}
   `;
 
-  if (branch && branch !== 'ALL') query += ` AND v.kode_cabang = '${branch}'`;
-  if (category && category !== 'ALL') query += ` AND v.kode_principal = '${category}'`;
+  if (branch && branch !== 'ALL') {
+    const branches = branch.split(',').map(b => `'${b.trim()}'`).join(',');
+    query += ` AND v.kode_cabang IN (${branches})`;
+  }
+  if (category && category !== 'ALL') {
+    const categories = category.split(',').map(c => `'${c.trim()}'`).join(',');
+    query += ` AND v.kode_principal IN (${categories})`;
+  }
 
   query += ` 
     GROUP BY kode_cabang, nama_cabang, latitude, longitude 

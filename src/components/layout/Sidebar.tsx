@@ -49,8 +49,11 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                 <Link
                   key={menu.href}
                   href={menu.href}
-
-                 
+                  onClick={() => {
+                    if (!isActive) {
+                      router.refresh();
+                    }
+                  }}
                   className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${isActive
                     ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'

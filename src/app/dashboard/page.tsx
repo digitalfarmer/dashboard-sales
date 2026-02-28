@@ -70,7 +70,7 @@ export default async function DashboardPage({
         category: selectedCategory,
         year: selectedYear
       }),
-      selectedBranch !== 'ALL'
+      selectedBranch !== 'ALL' && !selectedBranch.includes(',')
         ? clickhouse.query({
             query: `SELECT nama_cabang FROM dbw_bsp_konsolidasi.dw_ms_cabang WHERE kode_cabang = '${selectedBranch}' LIMIT 1`,
             format: 'JSONEachRow'
@@ -81,6 +81,9 @@ export default async function DashboardPage({
     salesData = salesResult;
     if (branchMeta.length > 0) {
       displayBranchName = branchMeta[0].nama_cabang;
+    } else if (selectedBranch.includes(',')) {
+      const branchCount = selectedBranch.split(',').length;
+      displayBranchName = `${branchCount} Cabang Terpilih`;
     }
   } catch (error) {
     console.error("Dashboard ClickHouse Error:", error);

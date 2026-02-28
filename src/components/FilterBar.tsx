@@ -6,10 +6,10 @@ import { Calendar, MapPin, Layers, Info } from 'lucide-react';
 interface FilterBarProps {
   selectedTahun: string;
   setSelectedTahun: (v: string) => void;
-  selectedCabang: string;
-  setSelectedCabang: (v: string) => void;
-  selectedDivisi: string;
-  setSelectedDivisi: (v: string) => void;
+  selectedCabang: string[];
+  setSelectedCabang: (v: string[]) => void;
+  selectedDivisi: string[];
+  setSelectedDivisi: (v: string[]) => void;
   listTahun: string[];
   listCabang: any[];
   listDivisi: any[];
@@ -35,6 +35,7 @@ export default function FilterBar({
         </label>
         <select 
           value={selectedTahun}
+          aria-label="Filter Tahun"
           onChange={(e) => setSelectedTahun(e.target.value)}
           className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer min-w-[100px]"
         >
@@ -42,36 +43,44 @@ export default function FilterBar({
         </select>
       </div>
 
-      {/* Filter Cabang */}
+      {/* Filter Cabang - Multi Select */}
       <div className="flex flex-col gap-2">
         <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] ml-1">
           <MapPin size={14} className="text-emerald-500" />
-          Cabang
+          Cabang ({selectedCabang.length})
         </label>
-        <select 
+        <select
+          aria-label="Filter Cabang"
+          multiple
           value={selectedCabang}
-          onChange={(e) => setSelectedCabang(e.target.value)}
-          className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all cursor-pointer min-w-[180px]"
+          onChange={(e) => {
+            const selected = Array.from(e.target.selectedOptions, option => option.value);
+            setSelectedCabang(selected);
+          }}
+          className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all cursor-pointer min-w-[180px] h-32"
         >
-          <option value="all">Semua Cabang</option>
           {listCabang?.map((c) => (
             <option key={c.kode_cabang} value={c.kode_cabang}>{c.nama_cabang}</option>
           ))}
         </select>
       </div>
 
-      {/* Filter Divisi */}
+      {/* Filter Divisi - Multi Select */}
       <div className="flex flex-col gap-2">
         <label className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] ml-1">
           <Layers size={14} className="text-orange-500" />
-          Divisi Produk
+          Divisi ({selectedDivisi.length})
         </label>
-        <select 
+        <select
+          aria-label="Filter Divisi Produk"
+          multiple
           value={selectedDivisi}
-          onChange={(e) => setSelectedDivisi(e.target.value)}
-          className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all cursor-pointer min-w-[180px]"
+          onChange={(e) => {
+            const selected = Array.from(e.target.selectedOptions, option => option.value);
+            setSelectedDivisi(selected);
+          }}
+          className="appearance-none border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50/50 text-sm font-semibold text-slate-700 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all cursor-pointer min-w-[180px] h-32"
         >
-          <option value="all">Semua Divisi</option>
           {listDivisi?.map((d) => (
             <option key={d.kode_divisi_produk} value={d.kode_divisi_produk}>{d.kode_divisi_produk}</option>
           ))}

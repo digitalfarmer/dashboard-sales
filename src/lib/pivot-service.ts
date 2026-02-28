@@ -6,13 +6,25 @@ export async function getPivotData(filters: { branch: string; category: string; 
     const { branch, category, year } = filters;
 
     let whereConditions = [`fkyear = ${year}`];
+    
+    // Tambahkan filter berdasarkan branch dan category jika tidak "ALL"
+    if (branch && branch !== 'ALL') {
+      const branchList = branch.split(',').map(b => `'${b}'`).join(',');
+      whereConditions.push(`kode_cabang IN (${branchList})`);
+    }
 
-    if (branch !== 'ALL') {
-      whereConditions.push(`kode_cabang = '${branch}'`);
+    // Logic untuk MULTI-CATEGORY
+    if (category && category !== 'ALL') {
+      const catList = category.split(',').map(c => `'${c}'`).join(',');
+      whereConditions.push(`kode_principal IN (${catList})`);
     }
-    if (category !== 'ALL') {
-      whereConditions.push(`kode_principal = '${category}'`);
-    }
+
+    // if (branch !== 'ALL') {
+    //   whereConditions.push(`kode_cabang = '${branch}'`);
+    // }
+    // if (category !== 'ALL') {
+    //   whereConditions.push(`kode_principal = '${category}'`);
+    // }
 
     const whereClause = whereConditions.join(' AND ');
 

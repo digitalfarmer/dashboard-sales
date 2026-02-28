@@ -21,8 +21,8 @@ export default function Dashboard() {
   const currentYear = new Date().getFullYear().toString();
 
   const [selectedTahun, setSelectedTahun] = useState(currentYear);
-  const [selectedCabang, setSelectedCabang] = useState('all');
-  const [selectedDivisi, setSelectedDivisi] = useState('all');
+  const [selectedCabang, setSelectedCabang] = useState<string[]>([]);
+  const [selectedDivisi, setSelectedDivisi] = useState<string[]>([]);
 
   // Logic fetching & kalkulasi summary sudah dipindah ke sini
   const { data, topProducts, mapData, isLoading, error, summary, trends, lastUpdated } =

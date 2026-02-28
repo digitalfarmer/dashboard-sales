@@ -56,11 +56,24 @@ export default function FilterBar() {
   }, []);
 
   const handleFilterChange = (key: string, selectedOption: any) => {
-    const value = selectedOption?.value;
     const params = new URLSearchParams(searchParams.toString());
-
-    if (value && value !== "ALL") {
-      params.set(key, value);
+    
+    if (Array.isArray(selectedOption) && selectedOption.length > 0) {
+      const hasAll = selectedOption.some((opt) => opt.value === "ALL");
+      
+      if (hasAll) {
+        params.delete(key);
+      } else {
+        const values = selectedOption.map((opt) => opt.value).join(",");
+        console.log(`Setting ${key} to:`, values);
+        params.set(key, values);
+      }
+    } else if (selectedOption && !Array.isArray(selectedOption)) {
+      if (selectedOption.value === "ALL") {
+        params.delete(key);
+      } else {
+        params.set(key, selectedOption.value);
+      }
     } else {
       params.delete(key);
     }
@@ -69,6 +82,8 @@ export default function FilterBar() {
       params.delete("category");
     }
 
+    console.log('New URL params:', params.toString());
+    
     startTransition(() => {
       router.push(`?${params.toString()}`);
       router.refresh();
@@ -78,6 +93,24 @@ export default function FilterBar() {
   const resetAll = () => {
     const basePath = pathname.includes('pivot') ? '/pivot' : '/dashboard';
     router.push(basePath);
+  };
+
+  const getValueFromParams = (key: string, optionsArray: any[]) => {
+    const val = searchParams.get(key);
+    
+    if (!val) {
+      if (key === "year") {
+        return optionsArray.find(o => o.value === "2026");
+      }
+      return optionsArray.find(o => o.value === "ALL");
+    }
+    
+    const splitVals = val.split(",");
+    if (splitVals.length > 1) {
+      return optionsArray.filter(o => splitVals.includes(o.value));
+    }
+    
+    return optionsArray.find(o => o.value === val);
   };
 
   // Custom Styles untuk menyesuaikan dengan Identity Tailwind/Indigo kamu
@@ -169,18 +202,35 @@ export default function FilterBar() {
           <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[220px]">
             <MapPin className="w-4 h-4 text-slate-400" />
             <Select
-              //styles={customSelectStyles}
-              menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+              isMulti
               styles={{
                 ...customSelectStyles,
                 menuPortal: (base) => ({ ...base, zIndex: 9999 })
-
               }}
               options={options.branches}
-              value={options.branches.find(b => b.value === (searchParams.get("branch") || "ALL"))}
-              onChange={(opt) => handleFilterChange("branch", opt)}
+              value={getValueFromParams("branch", options.branches)}
+              onChange={(selected) => {
+                if (!selected || (Array.isArray(selected) && selected.length === 0)) {
+                  handleFilterChange("branch", [{ value: "ALL", label: "Nasional" }]);
+                  return;
+                }
+                
+                if (Array.isArray(selected)) {
+                  const lastSelected = selected[selected.length - 1];
+                  
+                  if (lastSelected?.value === "ALL") {
+                    handleFilterChange("branch", [{ value: "ALL", label: "Nasional" }]);
+                  } else {
+                    const nonAllItems = selected.filter(opt => opt.value !== "ALL");
+                    handleFilterChange("branch", nonAllItems);
+                  }
+                } else {
+                  handleFilterChange("branch", selected);
+                }
+              }}
+              placeholder="Nasional"
+              menuPortalTarget={typeof window !== "undefined" ? document.body : null}
               isSearchable={true}
-              placeholder="Cari Cabang..."
               className="flex-1"
             />
           </div>
@@ -195,20 +245,36 @@ export default function FilterBar() {
         <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[250px]">
           <Tag className="w-4 h-4 text-slate-400" />
           <Select
-            //styles={customSelectStyles}
-            options={options.categories}
-            value={options.categories.find(c => c.value === (searchParams.get("category") || "ALL"))}
-            onChange={(opt) => handleFilterChange("category", opt)}
-            isSearchable={true}
-            placeholder="Cari Divisi..."
-            className="flex-1"
-
-            menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+            isMulti
             styles={{
               ...customSelectStyles,
               menuPortal: (base) => ({ ...base, zIndex: 9999 })
-
             }}
+            options={options.categories}
+            value={getValueFromParams("category", options.categories)}
+            onChange={(selected) => {
+              if (!selected || (Array.isArray(selected) && selected.length === 0)) {
+                handleFilterChange("category", [{ value: "ALL", label: "Semua Divisi" }]);
+                return;
+              }
+              
+              if (Array.isArray(selected)) {
+                const lastSelected = selected[selected.length - 1];
+                
+                if (lastSelected?.value === "ALL") {
+                  handleFilterChange("category", [{ value: "ALL", label: "Semua Divisi" }]);
+                } else {
+                  const nonAllItems = selected.filter(opt => opt.value !== "ALL");
+                  handleFilterChange("category", nonAllItems);
+                }
+              } else {
+                handleFilterChange("category", selected);
+              }
+            }}
+            placeholder="Semua Divisi"
+            isSearchable={true}
+            menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+            className="flex-1"
           />
         </div>
 

@@ -6,7 +6,6 @@ export async function GET(request: Request) {
   const cabang = searchParams.get('cabang');
   const divisi = searchParams.get('divisi');
 
-  // Query dengan JOIN untuk mengambil Latitude & Longitude dari dw_ms_cabang
   let query = `
     SELECT 
         A.nama_cabang,
@@ -19,14 +18,14 @@ export async function GET(request: Request) {
     WHERE A.fkyear = ${tahun}
   `;
 
-  // Tambahkan filter jika user memilih cabang tertentu
   if (cabang && cabang !== 'all') {
-    query += ` AND A.kode_cabang = '${cabang}'`;
+    const cabangList = cabang.split(',').map(c => `'${c}'`).join(',');
+    query += ` AND A.kode_cabang IN (${cabangList})`;
   }
 
-  // Tambahkan filter jika user memilih divisi tertentu
   if (divisi && divisi !== 'all') {
-    query += ` AND A.kode_divisi_produk = '${divisi}'`;
+    const divisiList = divisi.split(',').map(d => `'${d}'`).join(',');
+    query += ` AND A.kode_divisi_produk IN (${divisiList})`;
   }
 
   // Grouping berdasarkan nama dan koordinat
