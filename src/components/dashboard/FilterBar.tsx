@@ -127,7 +127,7 @@ export default function FilterBar() {
       </div>
     );
   }
-  
+
 
   return (
     <div className={`relative ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
@@ -137,7 +137,7 @@ export default function FilterBar() {
         </div>
       )}
 
-      
+
 
       <div className="flex flex-wrap items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm mb-8 transition-all">
         <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-xs font-bold uppercase tracking-wider">
@@ -171,11 +171,11 @@ export default function FilterBar() {
             <Select
               //styles={customSelectStyles}
               menuPortalTarget={typeof window !== "undefined" ? document.body : null}
-            styles={{
-              ...customSelectStyles,
-              menuPortal: (base) => ({ ...base, zIndex: 9999 })
+              styles={{
+                ...customSelectStyles,
+                menuPortal: (base) => ({ ...base, zIndex: 9999 })
 
-            }}
+              }}
               options={options.branches}
               value={options.branches.find(b => b.value === (searchParams.get("branch") || "ALL"))}
               onChange={(opt) => handleFilterChange("branch", opt)}
