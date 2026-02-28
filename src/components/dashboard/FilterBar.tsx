@@ -85,6 +85,7 @@ export default function FilterBar() {
     control: (base: any) => ({
       ...base,
       backgroundColor: 'transparent',
+      //color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b',
       border: 'none',
       boxShadow: 'none',
       minHeight: '32px',
@@ -92,9 +93,10 @@ export default function FilterBar() {
     }),
     valueContainer: (base: any) => ({ ...base, padding: '0 4px' }),
     input: (base: any) => ({ ...base, color: '#475569' }), // slate-600
-    singleValue: (base: any) => ({ 
-      ...base, 
-      color: '#1e293b', // slate-800
+    singleValue: (base: any) => ({
+      ...base,
+      //color: '#1e293b', // slate-800
+      color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b',
       fontWeight: '700',
       fontSize: '14px'
     }),
@@ -102,6 +104,7 @@ export default function FilterBar() {
       ...base,
       backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#f5f3ff' : 'white',
       color: state.isSelected ? 'white' : '#475569',
+
       fontSize: '13px',
       fontWeight: '600',
       cursor: 'pointer',
@@ -110,6 +113,7 @@ export default function FilterBar() {
       ...base,
       borderRadius: '16px',
       overflow: 'hidden',
+      //color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b',
       boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
       border: '1px solid #f1f5f9'
     })
@@ -123,6 +127,7 @@ export default function FilterBar() {
       </div>
     );
   }
+  
 
   return (
     <div className={`relative ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
@@ -131,6 +136,8 @@ export default function FilterBar() {
           Updating Data...
         </div>
       )}
+
+      
 
       <div className="flex flex-wrap items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm mb-8 transition-all">
         <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-xs font-bold uppercase tracking-wider">
@@ -141,12 +148,19 @@ export default function FilterBar() {
         <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[120px]">
           <Calendar className="w-4 h-4 text-slate-400" />
           <Select
-            styles={customSelectStyles}
+            //styles={customSelectStyles}
+            menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+            styles={{
+              ...customSelectStyles,
+              menuPortal: (base) => ({ ...base, zIndex: 9999 })
+
+            }}
             options={options.years}
             value={options.years.find(y => y.value === (searchParams.get("year") || "2026"))}
             onChange={(opt) => handleFilterChange("year", opt)}
             isSearchable={false} // Tahun biasanya dikit, ga perlu search
-            className="flex-1"
+            className="flex-1 "
+
           />
         </div>
 
@@ -155,7 +169,13 @@ export default function FilterBar() {
           <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[220px]">
             <MapPin className="w-4 h-4 text-slate-400" />
             <Select
-              styles={customSelectStyles}
+              //styles={customSelectStyles}
+              menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+            styles={{
+              ...customSelectStyles,
+              menuPortal: (base) => ({ ...base, zIndex: 9999 })
+
+            }}
               options={options.branches}
               value={options.branches.find(b => b.value === (searchParams.get("branch") || "ALL"))}
               onChange={(opt) => handleFilterChange("branch", opt)}
@@ -175,13 +195,20 @@ export default function FilterBar() {
         <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[250px]">
           <Tag className="w-4 h-4 text-slate-400" />
           <Select
-            styles={customSelectStyles}
+            //styles={customSelectStyles}
             options={options.categories}
             value={options.categories.find(c => c.value === (searchParams.get("category") || "ALL"))}
             onChange={(opt) => handleFilterChange("category", opt)}
             isSearchable={true}
             placeholder="Cari Divisi..."
             className="flex-1"
+
+            menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+            styles={{
+              ...customSelectStyles,
+              menuPortal: (base) => ({ ...base, zIndex: 9999 })
+
+            }}
           />
         </div>
 
